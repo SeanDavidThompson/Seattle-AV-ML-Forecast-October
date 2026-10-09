@@ -1,24 +1,479 @@
-Property type	Old, April	Old, August	Old, October	ML with area reports	ML model only
-Residential	4.5	2.5	1.9	0.2	7.9
-Apartments	2.3	3.3	4.9	1.3	6.3
-Major office	10.9	9.8	3.9	2.7	10.2
+> run_main_ml()
+==============================================
+run_main_ml() started at: 2026-10-08 23:38:35
+replicate=TRUE | panel_replicate=TRUE | model_replicate=TRUE | retrofit=TRUE | diagnostics=TRUE | extend=TRUE | forecast_only=FALSE
+scenario = baseline | prop_scope = res
+forecast = 2027-2031
+use_area_actuals = TRUE (reports year 2026)
+use_health_ratings = TRUE
+kca_date = 2026-09-25 | seed = 123
+import_raw_changes = FALSE
+==============================================
+00_init.R loaded. the cake is still a lie.
 
-Property type	TY2025 base ($B)	Old, April	Old, August	Old, October	ML with area reports	ML model only
-Residential	158	-1.64	-4.06	-2.79	-0.44	+2.62
-Apartments	39.0	-1.73	-2.08	-2.08	-0.39	-2.33
-Major office	21.6	-0.39	-0.44	+0.30	+0.59	-1.03
-Industrial	11.7	-0.24	-0.37	-0.09	-0.25	+0.09
-Retail	7.5	-0.03	+0.12	+0.10	+0.03	+0.06
-Net		-4.03	-6.83	-4.56	-0.46	-0.59
-Total miss, ignoring sign		4.05	7.07	5.36	1.70	6.14
+--- Step 0: Import actual AV growth from area reports ---
+  geo_actuals_scope = nonspecialty | specialty_actuals_policy = model
 
-Property type	Vintage year (forecast for)	Actual	Old, April	Old, August	Old, October	ML with area reports	ML model only
-Residential	2025 (TY2026)	+4.7	+3.6	+2.1	+2.9	+4.4	+6.3
-Residential	2024 (TY2025)	+8.0	+1.7	+4.5	+5.0	+7.9	+4.1
-Residential	2023 (TY2024)	-7.6	-1.3	-6.4	-8.4	-7.4	+10.5
-Apartments	2025 (TY2026)	+4.4	0.0	-0.9	-0.9	+3.4	-1.6
-Apartments	2024 (TY2025)	-6.0	-5.6	-8.4	+0.2	-6.4	+4.1
-Apartments	2023 (TY2024)	+0.1	+2.1	+2.2	-3.1	-2.5	-2.7
-Major office	2025 (TY2026)	-5.9	-7.8	-8.0	-4.5	-3.2	-10.7
-Major office	2024 (TY2025)	-24.7	-4.9	-7.4	-19.8	-22.9	-2.8
-Major office	2023 (TY2024)	-5.3	-16.5	-15.5	-10.7	-1.9	-1.5
+--- area_report_import.R (assessment year 2026) ---
+area_report_import.R complete.
+
+--- Step 1a: ETL + transforms (residential) ---
+01_import_res.R loaded — 189319 parcels | 533734 bldg rows
+  02_transfrm.R: applying data quality fixes to parcel_res_full (189319 rows) ...
+    bldg_grade column not found in parcel_res_full — skipping grade cap
+Processed 525498 groups out of 525498. 100% done. Time elapsed: 224s. ETA: 0s..
+    Primary-building grade correction applied. 8236 secondary building rows excluded from grade aggregation.
+    is_small_mf: 7535 parcels with 2-4 units (cross-track dedup applied later)
+    airport_noise: 523 non-zero parcels (kept as standalone feature)
+    nuisance_score rebuilt (traffic + power + other; airport_noise separate)
+    nuisance_score range: 0 - 4
+    Removing 3491 condo complex master records (prop_type=K, minor=0000)
+    Removing 113 parcels with non-modellable prop_type (M/N/U/X/T)
+    PropType split before residential filter: C=19385 | R=166330
+    residential track before: 185715 parcels | TY2026 AV $260.849B
+    residential track after:  166330 parcels | TY2026 AV $166.118B
+    removed (non-R PropType): 19385 parcels | TY2026 AV $94.731B
+    prop_type filter complete: 166330 parcels remain
+    is_non_sfr_hbu: 10232 parcels with non-residential HBU (code >= 6) — setting model_res=0
+    is_land_only: 5800 parcels (no building sqft AND no improvement AV)
+    train_res=1 (used for model training): 150820
+    forecast_res=1 (receive AV forecast):  166330
+    access: 166156 non-zero
+    street_surface: 1211 unpaved parcels
+    pcnt_unusable > 0: 398 parcels
+    hundred_yr_flood_plain: 0 parcels
+    New Parcel features present: 15 of 18 — access, water_system, sewer_system, street_surface, topography, pcnt_unusable, adjacent_golf_fairway, adjacent_greenbelt, lot_depth_factor, erosion_hazard, critical_drainage, hundred_yr_flood_plain, stream, wetland, species_of_concern
+  02_transfrm.R summary:
+    Total parcels:             166330
+    train_res=1 (train):       150820  (model training eligible)
+    forecast_res=1 (forecast): 166330  (all parcels receive AV forecast)
+    model_res=0 (flagged):     10232  (incomplete + exempt + non-SFR HBU — forecasted but not trained)
+    is_land_only:              5800  (land AV only; imps suppressed in retrofit/forecast)
+    Exceptional grade (=20):   0
+    Small MF (2-4 units):      7535  (cross-track dedup pending)
+    Daylight basement Y:       col not present
+    Non-SFR HBU (excl train):  10232
+    airport_noise non-zero:    484
+    New Parcel features added: 15 of 18
+02_transfrm.R loaded.
+  💾 cached: parcel_res_full (153.3 MB)
+  Skipping raw changes import (import_raw_changes = FALSE) ...
+  ✅ loaded: changes_long_tbl
+Rows: 27943411 Columns: 16                                                                                                                                                                                            
+── Column specification ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Delimiter: ","
+chr  (7): Major, Minor, TaxValReason, TaxStatus, LevyCode, ChangeDocId, Reason
+dbl  (8): TaxYr, OmitYr, ApprLandVal, ApprImpsVal, ApprImpIncr, LandVal, ImpsVal, SplitCode
+dttm (1): ChangeDate
+
+ℹ Use `spec()` to retrieve the full column specification for this data.
+ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+xx_av_history.R loaded — av_history_cln: 5145699 rows | tax_yr 2001–2026
+  💾 cached: av_history_cln (685.8 MB)
+
+--- Step 2: Panel assembly (scenario = baseline) ---
+  facet_cols: carried 20 of 22 (hbu_as_if_vacant_desc, unbuildable, sq_ft_lot, nuisance_score, mt_rainier, olympics, cascades, territorial, seattle_skyline, puget_sound, lake_washington, seismic_hazard, landslide_hazard, steep_slope_hazard, traffic_noise, airport_noise, power_lines, other_nuisances, contamination, historic_site)
+    MISSING from parcel_res_full: current_zoning_3, log_appr_land_val_lag1
+  dist_cols: carried 0 of 3
+    MISSING from parcel_res_full: dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+  gate_cols: carried 4 of 4 (train_res, model_res, is_land_only, is_small_mf)
+Applying changes for: hbu_as_if_vacant_desc
+Applying changes for: unbuildable
+Applying changes for: sq_ft_lot
+Applying changes for: nuisance_score
+Applying changes for: mt_rainier
+Applying changes for: olympics
+Applying changes for: cascades
+Applying changes for: territorial
+Applying changes for: seattle_skyline
+Applying changes for: puget_sound
+Applying changes for: lake_washington
+Applying changes for: seismic_hazard
+Applying changes for: landslide_hazard
+Applying changes for: steep_slope_hazard
+Applying changes for: traffic_noise
+Applying changes for: airport_noise
+Applying changes for: power_lines
+Applying changes for: other_nuisances
+Applying changes for: contamination
+Applying changes for: historic_site
+xx_combine_parcel_history_changes.R loaded: panel ready for retrofitting.
+Running xx_permits_to_panel.R (robust) ...
+✅ permits added to panel_tbl. New permit cols: permits_last_1yr, permits_last_3yr, permits_last_5yr, val_last_3yr, val_last_5yr, sqft_last_3yr, units_last_3yr, any_newconst, years_since_newconst, log_val_last_3yr, log_sqft_last_3yr
+xx_permits_to_panel.R loaded
+Running xx_kca_permits_to_panel.R ...
+  header: EXTR_PermitHistory_V.csv
+  detail: EXTR_PermitDetailHistory_V.csv
+  description rows (item 12): 5,897 | structural 1,143 | cosmetic/systems 300 | unclassified 4,454
+  Major: all 775,363 values are 6 chars — no padding applied
+  Minor: all 775,363 values are 4 chars — no padding applied
+  header rows: 775,363 | parcels: 336,523
+  dropped — unparseable date: 0 | pre-1901 sentinel: 2 | dated past tax_yr 2026: 1
+  rows kept: 775,360 | tax_yr map: issue_yr + 0
+  ⚠️  PermitType values outside the known vocabulary (3 rows):  (3)
+  PermitVal winsorized at p99.5 of nonzero = $6,723,037 (3,210 rows capped)
+  permits with a description row: 6,385 of 775,360 (0.8%)
+  parcel-years aggregated: 562,247 over 336,523 parcels
+  key format — panel: 10 chars, dashed=FALSE | extract: 10 chars, dashed=FALSE
+  join — 88,276 of 336,523 extract parcels are in the panel (26.2%; the extract is countywide, the panel is Seattle)
+  join — 88,276 of 166,330 panel parcels have at least one permit (53.1%)
+  window rows built: 335,415
+  ✅ kcap features attached: 8 of 8 (kcap_newconst_3yr, kcap_remodel_3yr, kcap_demo_3yr, kcap_permits_3yr, log_kcap_val_3yr, log_kcap_val_max_3yr, kcap_years_since_newconst, kcap_desc_major_3yr)
+    all-NA: 0 | constant: 1 (kcap_desc_major_3yr)
+    parcel-years with a permit in the trailing 3 yrs: 335,415 of 4,490,910 (7.5%)
+    parcel-years with a dated new-construction permit: 407,833
+xx_kca_permits_to_panel.R loaded
+Running xx_home_improvement_to_panel.R ...
+  ⚠️  no home improvement extracts found — hi_* features skipped
+xx_home_improvement_to_panel.R loaded
+xx_nwmls_to_panel.R: scenario = baseline
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds
+xx_nwmls_to_panel.R loaded (scenario = baseline | KC SFH = TRUE)
+xx_econ_to_panel.R: scenario = baseline
+  Reading OERF sheet: Baseline ANN
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...2`
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...2`
+💾 econ forecast cached to: econ_fcst_2026_2031_baseline.rds
+💾 econ all-years cached to: econ_all_years_baseline.rds
+Running xx_construction_sales_to_panel.R (scenario = baseline) ...
+  ⚠️  2026-07_trs_construction.xlsx not found — con_sales_* features skipped
+xx_construction_sales_to_panel.R loaded
+  💾 cached: panel_tbl_res (2545.6 MB)
+  🧹 freed: parcel_res_full, av_dt, panel_tbl  (3365.1 MB)
+
+--- Step 3: Models ---
+
+  [Residential models]
+  Training residential LightGBM models ...
+Parallel backend registered with 15 cores.
+Running 03_model_land.R (LightGBM delta + level rolling CV) ...
+  Using panel_tbl_res from .GlobalEnv
+  ℹ️  current_zoning_3 missing from panel (extract schema change) — stubbing constant factor
+  ℹ️  dist_to_public_km missing from panel (legacy feature) — stubbing NA
+  ℹ️  dist_to_private_km missing from panel (legacy feature) — stubbing NA
+  ℹ️  dist_to_lightrail_km missing from panel (legacy feature) — stubbing NA
+  03_model_land: 418770 parcel-years excluded from training (train_res=0)
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): unbuildable, seismic_hazard, landslide_hazard, steep_slope_hazard, dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+LightGBM LAND DELTA rolling CV RMSE (delta): 0.1328
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): unbuildable, seismic_hazard, landslide_hazard, steep_slope_hazard, dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+LightGBM LAND LEVEL rolling CV RMSE (log level): 0.5237
+✅ Saved land delta + level artifacts with stamp: 20261009_002738
+
+delta model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 nwmls      0.560           6   0.0933
+2 parcel     0.378          29   0.0130
+3 econ       0.0615          6   0.0103
+
+delta model — top features by group:
+# A tibble: 15 × 3
+   group  feature                                     gain
+   <chr>  <chr>                                      <dbl>
+ 1 nwmls  sea_pmedesfh_lag12                       0.299  
+ 2 nwmls  sea_pmedesfh_lag6                        0.0872 
+ 3 nwmls  sea_alesfh_lag12                         0.0726 
+ 4 nwmls  sea_alesfh_lag6                          0.0521 
+ 5 nwmls  sea_sesfh_lag6                           0.0432 
+ 6 parcel log_appr_land_val_lag1                   0.144  
+ 7 parcel sq_ft_lot                                0.0316 
+ 8 parcel area21                                   0.0284 
+ 9 parcel log_appr_land_val_lag2                   0.0283 
+10 parcel area22                                   0.0173 
+11 econ   econ_employment_thous_yoy_lag1           0.0246 
+12 econ   econ_services_providing_yoy_lag1         0.0113 
+13 econ   econ_housing_permits_thous_yoy_lag1      0.00891
+14 econ   econ_wholesale_and_retail_trade_yoy_lag1 0.00741
+15 econ   econ_population_thous_yoy_lag1           0.00471
+
+level model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel     0.627          62   0.0101
+2 nwmls      0.293           6   0.0489
+3 econ       0.0795          4   0.0199
+
+level model — top features by group:
+# A tibble: 14 × 3
+   group  feature                                                                   gain
+   <chr>  <chr>                                                                    <dbl>
+ 1 nwmls  sea_pmedesfh_lag12                                                     0.187  
+ 2 nwmls  sea_pmedesfh_lag6                                                      0.0787 
+ 3 nwmls  sea_sesfh_lag6                                                         0.0175 
+ 4 nwmls  sea_alesfh_lag6                                                        0.00476
+ 5 nwmls  sea_sesfh_lag12                                                        0.00308
+ 6 parcel sq_ft_lot                                                              0.174  
+ 7 parcel area14                                                                 0.0437 
+ 8 parcel area22                                                                 0.0394 
+ 9 parcel area77                                                                 0.0389 
+10 parcel area21                                                                 0.0340 
+11 econ   econ_employment_thous_lvl_lag1                                         0.0398 
+12 econ   econ_population_thous_lvl_lag1                                         0.0298 
+13 econ   econ_services_providing_lvl_lag1                                       0.00862
+14 econ   econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1 0.00127
+03_model_land.R loaded (LightGBM delta + level)
+Running 03_model_impr.R (LightGBM delta + level rolling CV) ...
+  Using panel_tbl_res from .GlobalEnv
+  ℹ️  current_zoning_3 missing from panel (extract schema change) — stubbing constant factor
+  03_model_impr: 418770 parcel-years excluded from training (train_res=0)
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): kcap_desc_major_3yr
+LightGBM IMPROVEMENT delta rolling CV RMSE (delta): 0.4136
+💾 cached improvements DELTA model + dv_impr_delta + training frame
+                                             Model     RMSE
+1 LightGBM (delta rolling CV, reconstructed level) 0.317486
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): kcap_desc_major_3yr
+LightGBM IMPROVEMENT LEVEL rolling CV RMSE (log level): 1.0294
+LEVEL model in-sample RMSE (sanity check; should be <= CV RMSE): 0.7664
+                        Model     RMSE
+1 LightGBM (level rolling CV) 1.029386
+💾 cached improvements LEVEL model + dv_impr_level + training frame
+
+delta model — feature gain by group:
+# A tibble: 4 × 4
+  group   total_gain n_features avg_gain
+  <chr>        <dbl>      <int>    <dbl>
+1 parcel      0.503          31  0.0162 
+2 econ        0.257           6  0.0429 
+3 nwmls       0.194           6  0.0324 
+4 permits     0.0460          6  0.00766
+
+delta model — top features by group:
+# A tibble: 20 × 3
+   group   feature                                                                   gain
+   <chr>   <chr>                                                                    <dbl>
+ 1 parcel  log_appr_imps_val_lag1                                                 0.200  
+ 2 parcel  log_appr_land_val                                                      0.102  
+ 3 parcel  log_appr_imps_val_lag2                                                 0.0471 
+ 4 parcel  kcap_years_since_newconst                                              0.0350 
+ 5 parcel  area45                                                                 0.0262 
+ 6 econ    econ_housing_permits_thous_yoy_lag1                                    0.115  
+ 7 econ    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_yoy_lag1 0.0717 
+ 8 econ    econ_services_providing_yoy_lag1                                       0.0533 
+ 9 econ    econ_population_thous_yoy_lag1                                         0.0120 
+10 econ    econ_employment_thous_yoy_lag1                                         0.00422
+11 nwmls   sea_sesfh_lag12                                                        0.0595 
+12 nwmls   sea_pmedesfh_lag12                                                     0.0563 
+13 nwmls   sea_sesfh_lag6                                                         0.0452 
+14 nwmls   sea_alesfh_lag6                                                        0.0264 
+15 nwmls   sea_pmedesfh_lag6                                                      0.00566
+16 permits permits_last_5yr                                                       0.0165 
+17 permits val_last_3yr                                                           0.00984
+18 permits val_last_5yr                                                           0.00890
+19 permits permits_last_3yr                                                       0.00570
+20 permits permits_last_1yr                                                       0.00334
+
+level model — feature gain by group:
+# A tibble: 4 × 4
+  group   total_gain n_features avg_gain
+  <chr>        <dbl>      <int>    <dbl>
+1 parcel     0.623           38 0.0164  
+2 econ       0.267            4 0.0668  
+3 nwmls      0.105            6 0.0175  
+4 permits    0.00472          7 0.000674
+
+level model — top features by group:
+# A tibble: 19 × 3
+   group   feature                                                                    gain
+   <chr>   <chr>                                                                     <dbl>
+ 1 parcel  log_appr_land_val                                                      0.212   
+ 2 parcel  kcap_years_since_newconst                                              0.0574  
+ 3 parcel  years_since_newconst                                                   0.0517  
+ 4 parcel  area21                                                                 0.0246  
+ 5 parcel  area14                                                                 0.0232  
+ 6 econ    econ_employment_thous_lvl_lag1                                         0.182   
+ 7 econ    econ_population_thous_lvl_lag1                                         0.0528  
+ 8 econ    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1 0.0247  
+ 9 econ    econ_services_providing_lvl_lag1                                       0.00742 
+10 nwmls   sea_pmedesfh_lag12                                                     0.0689  
+11 nwmls   sea_pmedesfh_lag6                                                      0.0115  
+12 nwmls   sea_alesfh_lag6                                                        0.00966 
+13 nwmls   sea_sesfh_lag12                                                        0.00689 
+14 nwmls   sea_sesfh_lag6                                                         0.00653 
+15 permits val_last_5yr                                                           0.00205 
+16 permits permits_last_5yr                                                       0.000921
+17 permits permits_last_1yr                                                       0.000912
+18 permits units_last_3yr                                                         0.000432
+19 permits sqft_last_3yr                                                          0.000200
+03_model_impr.R loaded (LightGBM delta + level, dv_impr + dv_impr_level built)
+  ✅ Residential models trained and saved.
+  ✅ loaded training frame: model_data_land_delta_model
+  ✅ loaded training frame: model_data_land_model
+  ✅ loaded training frame: model_data_impr_delta_model
+  ✅ loaded training frame: model_data_impr_level_model
+  🧹 freed: panel_tbl  (2562.8 MB)
+  🧹 freed: model_data_land_delta_model, model_data_land_model, model_data_impr_delta_model, model_data_impr_level_model  (2999.7 MB)
+
+--- Step 4a: Retrofit historical AV (residential) ---
+  🧹 freed: panel_tbl_res  (2545.6 MB)
+✅ loaded cached: model_data_impr_level_model
+✅ loaded cached: model_data_land_model
+✅ loaded cached: model_data_impr_delta_model
+impute_for_prediction called
+Predicting chunk 1/14
+Predicting chunk 2/14
+Predicting chunk 3/14
+Predicting chunk 4/14
+Predicting chunk 5/14
+Predicting chunk 6/14
+Predicting chunk 7/14
+Predicting chunk 8/14
+Predicting chunk 9/14
+Predicting chunk 10/14
+Predicting chunk 11/14
+Predicting chunk 12/14
+Predicting chunk 13/14
+Predicting chunk 14/14
+LAND (LGBM): Missing outcomes: 670417
+LAND (LGBM): Predicted (after impute/align): 670417
+LAND (LGBM): Still missing after predict: 0
+  IMPR: 142488 land-only parcels excluded from improvement prediction
+impute_for_prediction called
+Predicting chunk 1/1
+impute_for_prediction called
+  IMPR: 14112 land-only parcel-years zeroed out in appr_imps_val_filled
+IMPR (LGBM): Missing outcomes: 651721
+IMPR (LGBM): Predicted (after impute/align): 651721
+IMPR (LGBM): Still missing after predict: 0
+💾 parquet: parcel_year_panel_2000_2025_2026-10-09.parquet
+# A tibble: 27 × 5
+   tax_yr n_rows n_na_land n_na_impr n_na_tot_filled
+    <dbl>  <int>     <int>     <int>           <int>
+ 1   2000 166330         0         0               0
+ 2   2001 166330         0         0               0
+ 3   2002 166330         0         0               0
+ 4   2003 166330         0         0               0
+ 5   2004 166330         0         0               0
+ 6   2005 166330         0         0               0
+ 7   2006 166330         0         0               0
+ 8   2007 166330         0         0               0
+ 9   2008 166330         0         0               0
+10   2009 166330         0         0               0
+11   2010 166330         0         0               0
+12   2011 166330         0         0               0
+13   2012 166330         0         0               0
+14   2013 166330         0         0               0
+15   2014 166330         0         0               0
+16   2015 166330         0         0               0
+17   2016 166330         0         0               0
+18   2017 166330         0         0               0
+19   2018 166330         0         0               0
+20   2019 166330         0         0               0
+21   2020 166330         0         0               0
+22   2021 166330         0         0               0
+23   2022 166330         0         0               0
+24   2023 166330         0         0               0
+25   2024 166330         0         0               0
+26   2025 166330         0         0               0
+# ℹ 1 more row
+# ℹ Use `print(n = ...)` to see more rows
+💾 cached retrofitted panel_tbl to: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/cache/panel_tbl_retro.rds
+04_retrofitting_values.R loaded (LightGBM only, cache-first).
+  💾 cached: panel_tbl_retro_res
+  🧹 freed: panel_tbl_retro, panel_tbl, model_data_land_model, model_data_impr_delta_model, model_data_impr_level_model  (8122.1 MB)
+
+--- Step 5a: Holdout diagnostics ---
+Running 05_eval_holdout_2025.R ...
+✅ loaded dv_impr_delta from: dv_impr_delta_20261009_003643.rds
+✅ loaded training frame: model_data_land_delta_model
+✅ loaded training frame: model_data_impr_delta_model
+✅ loaded training frame: model_data_comm_land_delta
+✅ loaded training frame: model_data_comm_impr_delta
+✅ loaded training frame: model_data_condo_land_delta
+✅ loaded training frame: model_data_condo_impr_delta
+  Commercial models not loaded — skipping commercial holdout eval.
+  Condo models not loaded — skipping condo holdout eval.
+
+=== 2025 Holdout Eval — All Tracks ===
+# A tibble: 2 × 7
+  Track       Target Model    RMSE_log MAE_log   MAPE   WAPE
+  <chr>       <chr>  <chr>       <dbl>   <dbl>  <dbl>  <dbl>
+1 Residential impr   LGB_impr    0.507  0.184  0.176  0.107 
+2 Residential land   LGB_land    0.143  0.0607 0.0591 0.0497
+✅ 2025 evaluation complete. Outputs written to: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/outputs/eval_2025
+05_eval_holdout_2025.R loaded
+  🧹 freed: panel_tbl, model_data_land_delta_model, model_data_impr_delta_model, model_data_comm_land_delta, model_data_comm_impr_delta, model_data_condo_land_delta, model_data_condo_impr_delta  (7201.1 MB)
+
+--- Step 5b: Extend panel 2027-2031 (scenario = baseline) ---
+05_extend_panel_2026_2031.R: scenario = baseline
+History through tax_yr = 2026
+Extending to: 2027, 2028, 2029, 2030, 2031
+Processed 166330 groups out of 166330. 100% done. Time elapsed: 12s. ETA: 0s.
+   n_rows n_unique_parcels n_missing_econ n_missing_nwmls
+    <int>            <int>          <int>           <int>
+1: 831650           166330              0               0
+💾 saved: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/cache/panel_tbl_2006_2031_inputs_baseline.rds
+💾 saved: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/outputs/parcel_year_panel_tbl_2006_2031_inputs_baseline.parquet
+05_extend_panel_2026_2031.R complete (scenario = baseline).
+  💾 cached: panel_tbl_2027_2031_inputs_baseline_res.rds
+  🧹 freed: panel_tbl_2006_2031_inputs_baseline  (3482.2 MB)
+  🧹 freed: panel_tbl_retro_res, panel_tbl_retro  (5776.5 MB)
+
+--- Step 6: Sequential forecast 2027-2031 ---
+  [Residential forecast]
+✅ loaded: model_data_land_delta_model
+✅ loaded: model_data_impr_delta_model
+
+============================================================
+SCENARIO: BASELINE
+============================================================
+History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
+
+--- tax_yr = 2027 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5,800 of 166,330 parcels have land but no improvement history through 2026 - improvements treated as 0 in totals
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2028 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2029 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2030 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2031 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na scenario
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int> <chr>   
+1   2027 166330           0     166330       0           0     160530       0 baseline
+2   2028 166330           0     166330       0           0     160530       0 baseline
+3   2029 166330           0     166330       0           0     160530       0 baseline
+4   2030 166330           0     166330       0           0     160530       0 baseline
+5   2031 166330           0     166330       0           0     160530       0 baseline
+💾 cached: panel_tbl_2006_2031_forecasted_baseline_res.rds
