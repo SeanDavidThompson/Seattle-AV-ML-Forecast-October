@@ -477,3 +477,23 @@ History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
 4   2030 166330           0     166330       0           0     160530       0 baseline
 5   2031 166330           0     166330       0           0     160530       0 baseline
 💾 cached: panel_tbl_2006_2031_forecasted_baseline_res.rds
+💾 parquet: parcel_year_panel_2006_2031_forecasted_baseline_res.parquet
+
+--- Method counts, all scenarios ---
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na scenario
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int> <chr>   
+1   2027 166330           0     166330       0           0     160530       0 baseline
+2   2028 166330           0     166330       0           0     160530       0 baseline
+3   2029 166330           0     166330       0           0     160530       0 baseline
+4   2030 166330           0     166330       0           0     160530       0 baseline
+5   2031 166330           0     166330       0           0     160530       0 baseline
+
+06_forecast_av_2026_2031_sequential.R complete (scenario = baseline).
+  🧹 freed: panel_tbl_2027_2031_inputs_baseline_res, panel_tbl_2006_2031_inputs_baseline_res  (6964.3 MB)
+
+==============================================
+run_main_ml() finished — elapsed: 99.8 min
+  prop_scope = res | scenario = baseline
+==============================================
+There were 41 warnings (use warnings() to see them)
