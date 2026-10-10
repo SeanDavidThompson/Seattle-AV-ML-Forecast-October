@@ -1,49 +1,10 @@
-> source("ad_hoc/overnight_monday.R")
-overnight_monday.R: 18 steps, logs in \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/outputs_nwmls_growth/logs
-19:27 s0 start: NWMLS forecast caches from the newest vintage
-19:27 s0 FAILED (0 min)
-19:27 a SKIPPED - failed/skipped dependency: s0
-19:27 b SKIPPED - failed/skipped dependency: a
-19:27 c SKIPPED - failed/skipped dependency: a
-19:27 d SKIPPED - failed/skipped dependency: c
-19:27 e1 SKIPPED - failed/skipped dependency: a
-19:27 e2 SKIPPED - failed/skipped dependency: d
-19:27 f1 SKIPPED - failed/skipped dependency: d
-19:27 f2 SKIPPED - failed/skipped dependency: d
-19:27 g1 SKIPPED - failed/skipped dependency: s0
-19:27 g2 SKIPPED - failed/skipped dependency: s0
-19:27 h_com_baseline start: com baseline (existing models)
-19:27 h_com_baseline FAILED (0 min)
-19:27 h_condo_baseline start: condo baseline (existing models)
-19:27 h_condo_baseline FAILED (0 min)
-19:27 h_com_optimistic start: com optimistic (existing models)
-19:27 h_com_optimistic FAILED (0 min)
-19:27 h_condo_optimistic start: condo optimistic (existing models)
-19:27 h_condo_optimistic FAILED (0 min)
-19:27 h_com_pessimistic start: com pessimistic (existing models)
-19:27 h_com_pessimistic FAILED (0 min)
-19:27 h_condo_pessimistic start: condo pessimistic (existing models)
-19:27 h_condo_pessimistic FAILED (0 min)
-19:27 i start: AB_SUMMARY.txt
-19:27 i FAILED (0 min)
+# 1. Which zip you downloaded (fix the path)
+z  <- "C:/Users/<you>/Downloads/nwmls_growth_files.zip"
+zl <- unzip(z, list = TRUE)[["Name"]]
+length(zl)                                    # ~20 = latest, ~17 = first version
+any(grepl("test_av_reconcile_prelim", zl))    # TRUE = includes the calibration
 
-All steps done in 0 h.  Summary: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/outputs_nwmls_growth/AB_SUMMARY.txt
-                    id             status elapsed_min
-1                   s0             FAILED           0
-2                    a skipped (needs s0)          NA
-3                    b  skipped (needs a)          NA
-4                    c  skipped (needs a)          NA
-5                    d  skipped (needs c)          NA
-6                   e1  skipped (needs a)          NA
-7                   e2  skipped (needs d)          NA
-8                   f1  skipped (needs d)          NA
-9                   f2  skipped (needs d)          NA
-10                  g1 skipped (needs s0)          NA
-11                  g2 skipped (needs s0)          NA
-12      h_com_baseline             FAILED           0
-13    h_condo_baseline             FAILED           0
-14    h_com_optimistic             FAILED           0
-15  h_condo_optimistic             FAILED           0
-16   h_com_pessimistic             FAILED           0
-17 h_condo_pessimistic             FAILED           0
-18                   i             FAILED           0
+# 2. What's on the share now
+file.exists(c("ad_hoc/overnight_monday.R", "ad_hoc/overnight_summary.R",
+              "scripts/ml/nwmls_features.R"))  # all TRUE = ready for tonight
+any(grepl("PRELIM_TOTAL", readLines("scripts/av_reconcile_certified.R")))  # TRUE = calibration copied
