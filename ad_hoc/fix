@@ -1123,3 +1123,507 @@ run_main_ml() finished — elapsed: 35.83 min
   commercial subgroups: apt, office, industrial, retail, hospitality, medical + other
 ==============================================
 There were 50 or more warnings (use warnings() to see the first 50)
+
+> run_main_ml(scenario = "baseline",prop_scope = "condo")
+==============================================
+run_main_ml() started at: 2026-10-10 15:23:29
+replicate=TRUE | panel_replicate=TRUE | model_replicate=TRUE | retrofit=TRUE | diagnostics=TRUE | extend=TRUE | forecast_only=FALSE
+scenario = baseline | prop_scope = condo
+forecast = 2027-2031
+use_area_actuals = TRUE (reports year 2026)
+use_health_ratings = TRUE
+nwmls_features = level
+kca_date = 2026-09-25 | seed = 123
+import_raw_changes = FALSE
+==============================================
+00_init.R loaded. the cake is still a lie.
+
+--- Step 0: Import actual AV growth from area reports ---
+  geo_actuals_scope = nonspecialty | specialty_actuals_policy = model
+
+--- area_report_import.R (assessment year 2026) ---
+  ✅ _dupes_2026/001-002-003-004-.pdf [res]: 4 areas
+  ✅ _dupes_2026/006-007-.pdf [res]: 2 areas
+  ✅ _dupes_2026/008-044-046-.pdf [res]: 3 areas
+  ✅ _dupes_2026/011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ _dupes_2026/012.pdf [com_geo]: 1 areas
+  ✅ _dupes_2026/015-.pdf [res]: 1 areas
+  ✅ _dupes_2026/019-042-043-082-.pdf [res]: 4 areas
+  ✅ _dupes_2026/021-.pdf [res]: 1 areas
+  ✅ _dupes_2026/034.pdf [com_geo]: 1 areas
+  ✅ _dupes_2026/039-.pdf [res]: 1 areas
+  ✅ _dupes_2026/045-.pdf [res]: 1 areas
+  ✅ _dupes_2026/100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+  ✅ _dupes_2026/153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ _dupes_2026/160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ _dupes_2026/250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ _dupes_2026/280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+  ✅ _dupes_2026/410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ _dupes_2026/413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ _dupes_2026/500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ _dupes_2026/510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ _dupes_2026/520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+  ✅ _dupes_2026/540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ _dupes_2026/608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ _dupes_2026/625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ _dupes_2026/700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ _dupes_2026/700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ _dupes_2026/700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ _dupes_2026/700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ _dupes_2026/700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ _dupes_2026/700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ _dupes_2026/700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ _dupes_2026/700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ _dupes_2026/720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+  ✅ _dupes_2026/800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ _dupes_2026/central.pdf [com_geo]: 8 areas
+  ✅ _dupes_2026/north.pdf [com_geo]: 8 areas
+  ✅ _dupes_2026/south.pdf [com_geo]: 7 areas
+  ✅ commercial/012.pdf [com_geo]: 1 areas
+  ✅ commercial/034.pdf [com_geo]: 1 areas
+  ✅ commercial/100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+  ✅ commercial/153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ commercial/160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ commercial/250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ commercial/280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+  ✅ commercial/410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ commercial/413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ commercial/500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ commercial/510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ commercial/520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+  ✅ commercial/540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ commercial/608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ commercial/625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ commercial/700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ commercial/700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ commercial/700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ commercial/700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ commercial/700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ commercial/700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ commercial/700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ commercial/700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ commercial/720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+  ✅ commercial/800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ commercial/central.pdf [com_geo]: 8 areas
+  ✅ commercial/north.pdf [com_geo]: 8 areas
+  ✅ commercial/south.pdf [com_geo]: 7 areas
+  ✅ residential/001-002-003-004-.pdf [res]: 4 areas
+  ✅ residential/006-007-.pdf [res]: 2 areas
+  ✅ residential/008-044-046-.pdf [res]: 3 areas
+  ✅ residential/011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ residential/015-.pdf [res]: 1 areas
+  ✅ residential/019-042-043-082-.pdf [res]: 4 areas
+  ✅ residential/021-.pdf [res]: 1 areas
+  ✅ residential/039-.pdf [res]: 1 areas
+  ✅ residential/045-.pdf [res]: 1 areas
+  specialty rates parsed for areas: 100, 153, 160, 174, 250, 280, 410, 413, 500, 510, 520, 540, 608, 625, 800
+  year  found  parsed  unparsed  known_gap
+  2026     78      74         4          0
+  not parsed:
+    2026 _dupes_2026/015.pdf          unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 _dupes_2026/101.pdf          unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+    2026 commercial/015.pdf           unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 commercial/101.pdf           unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+  💾 cached: area_report_actuals_2026.rds
+  💾 csv: area_report_actuals_2026.csv
+  Actual 2025→2026 AV growth (population basis):
+    com   43 cells | min -31.0% | median +0.5% | max +28.3%
+    condo 18 cells | min -6.5% | median -4.7% | max -2.4%
+    res   34 cells | min -5.8% | median -1.4% | max +2.0%
+area_report_import.R complete.
+  area_report_actuals available: 51 geographic areas | 16 specialty areas
+
+--- Step 1b: ETL + transforms (commercial) ---
+  ✅ loaded: parcel_comm_full
+  ✅ loaded: parcel_res_full
+  ✅ loaded: changes_long_tbl
+  ✅ loaded: av_history_cln
+
+--- Step 1c: ETL + transforms (condo) ---
+  Reading EXTR_CondoComplex ...
+    condo_complex_cln rows: 5753
+  Reading EXTR_CondoUnit ...
+    condo_unit_cln rows: 99779
+  Joining complex attributes onto unit parcels ...
+    Condo units flagged as also in CommBldg: 345 (0.3%)
+    condo_parcel_full rows: 99779 | unique majors (complexes): 3447
+01_import_condo.R loaded.
+  Excluding 1870 timeshare units (ComplexType=3) from model panel.
+  parcel_condo_full rows: 97909
+  Unique complexes (major): 3263
+  Condo segments:
+    condo_segment     N
+           <char> <int>
+1: Standard Condo 78156
+2:     MFTE Condo 15085
+3:          Co-op  2282
+4:    Other Condo  1421
+5:      Leasehold   952
+6:    Condo Hotel    13
+  Condo units flagged model_condo=1: 97909
+02_transfrm_condo.R loaded.
+  💾 cached: parcel_condo_full (36.5 MB)
+  💾 cached: condo_complex_cln (1.4 MB)
+
+--- Step 2: Panel assembly (scenario = baseline) ---
+  facet_cols: carried 20 of 22 (hbu_as_if_vacant_desc, unbuildable, sq_ft_lot, nuisance_score, mt_rainier, olympics, cascades, territorial, seattle_skyline, puget_sound, lake_washington, seismic_hazard, landslide_hazard, steep_slope_hazard, traffic_noise, airport_noise, power_lines, other_nuisances, contamination, historic_site)
+    MISSING from parcel_res_full: current_zoning_3, log_appr_land_val_lag1
+  dist_cols: carried 0 of 3
+    MISSING from parcel_res_full: dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+  gate_cols: carried 4 of 4 (train_res, model_res, is_land_only, is_small_mf)
+Applying changes for: hbu_as_if_vacant_desc
+Applying changes for: unbuildable
+Applying changes for: sq_ft_lot
+Applying changes for: nuisance_score
+Applying changes for: mt_rainier
+Applying changes for: olympics
+Applying changes for: cascades
+Applying changes for: territorial
+Applying changes for: seattle_skyline
+Applying changes for: puget_sound
+Applying changes for: lake_washington
+Applying changes for: seismic_hazard
+Applying changes for: landslide_hazard
+Applying changes for: steep_slope_hazard
+Applying changes for: traffic_noise
+Applying changes for: airport_noise
+Applying changes for: power_lines
+Applying changes for: other_nuisances
+Applying changes for: contamination
+Applying changes for: historic_site
+xx_combine_parcel_history_changes.R loaded: panel ready for retrofitting.
+Running xx_permits_to_panel.R (robust) ...
+✅ permits added to panel_tbl. New permit cols: permits_last_1yr, permits_last_3yr, permits_last_5yr, val_last_3yr, val_last_5yr, sqft_last_3yr, units_last_3yr, any_newconst, years_since_newconst, log_val_last_3yr, log_sqft_last_3yr
+xx_permits_to_panel.R loaded
+Running xx_kca_permits_to_panel.R ...
+  header: EXTR_PermitHistory_V.csv
+  detail: EXTR_PermitDetailHistory_V.csv
+  description rows (item 12): 5,897 | structural 1,143 | cosmetic/systems 300 | unclassified 4,454
+  Major: all 775,363 values are 6 chars — no padding applied
+  Minor: all 775,363 values are 4 chars — no padding applied
+  header rows: 775,363 | parcels: 336,523
+  dropped — unparseable date: 0 | pre-1901 sentinel: 2 | dated past tax_yr 2026: 1
+  rows kept: 775,360 | tax_yr map: issue_yr + 0
+  ⚠️  PermitType values outside the known vocabulary (3 rows):  (3)
+  PermitVal winsorized at p99.5 of nonzero = $6,723,037 (3,210 rows capped)
+  permits with a description row: 6,385 of 775,360 (0.8%)
+  parcel-years aggregated: 562,247 over 336,523 parcels
+  key format — panel: 10 chars, dashed=FALSE | extract: 10 chars, dashed=FALSE
+  join — 88,276 of 336,523 extract parcels are in the panel (26.2%; the extract is countywide, the panel is Seattle)
+  join — 88,276 of 166,330 panel parcels have at least one permit (53.1%)
+  window rows built: 335,415
+  ✅ kcap features attached: 8 of 8 (kcap_newconst_3yr, kcap_remodel_3yr, kcap_demo_3yr, kcap_permits_3yr, log_kcap_val_3yr, log_kcap_val_max_3yr, kcap_years_since_newconst, kcap_desc_major_3yr)
+    all-NA: 0 | constant: 1 (kcap_desc_major_3yr)
+    parcel-years with a permit in the trailing 3 yrs: 335,415 of 4,490,910 (7.5%)
+    parcel-years with a dated new-construction permit: 407,833
+xx_kca_permits_to_panel.R loaded
+Running xx_home_improvement_to_panel.R ...
+  ⚠️  no home improvement extracts found — hi_* features skipped
+xx_home_improvement_to_panel.R loaded
+xx_nwmls_to_panel.R: scenario = baseline
+  NWMLS baseline -> 2026-06_nwmls_housing_forecast_baseline.xlsx
+  NWMLS optimistic -> 2026-06_nwmls_housing_forecast_optimistic.xlsx
+  NWMLS pessimistic -> 2026-06_nwmls_housing_forecast_pessimistic.xlsx
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds
+xx_nwmls_to_panel.R loaded (scenario = baseline | KC SFH = TRUE)
+xx_econ_to_panel.R: scenario = baseline
+  Reading OERF sheet: Baseline ANN
+  OERF workbook: OERF_EcoForecast_KS_2026Q3_202607 2026-07-26.xlsx
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...2`
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...2`
+💾 econ forecast cached to: econ_fcst_2026_2031_baseline.rds
+💾 econ all-years cached to: econ_all_years_baseline.rds
+Running xx_construction_sales_to_panel.R (scenario = baseline) ...
+  ⚠️  2026-07_trs_construction.xlsx not found — con_sales_* features skipped
+xx_construction_sales_to_panel.R loaded
+  Loaded av_history_cln from cache.
+  commercial AV history matched: 17143 of 19385 parcels (id format: dashed)
+  Excluding 345 condo units already in CommBldg (mixed-use).
+  Econ columns joined to commercial and condo panels: 12
+  panel_tbl_all rows:   7648533
+    res:   4490910
+    com:   523395
+    condo: 2634228
+  [assert] res parcels: 166330 | com parcels: 19385 | condo units: 97564
+  [assert] res/com parcel_id overlap: 0 — OK
+|--------------------------------------------------|
+|==================================================|
+  [assert] Seattle levy-code EXTR_Parcel population: 189319 parcels (PropType R 166330 | C 19385)
+  [assert] res 166330 / 166330 (missing 0) | com 19385 / 19385 (missing 0)
+  [assert] res + com reconcile to the Seattle population — OK
+xx_combine_res_comm_condo_panel.R loaded.
+xx_nwmls_condo_to_panel.R: scenario = baseline
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+  Available columns: k_alesfh, k_alesfh_fav, k_alesfh_f50, k_alec, k_alec_fav, k_alec_f50, k_sesfh, k_sesfh_fav, k_sesfh_f50, k_sec, k_sec_fav, k_sec_f50, k_pmedesfh, k_pmedesfh_fav, k_pmedesfh_f90, k_pmedesfh_f91, k_pmedec, k_pmedec_fav, k_pmedec_f90, k_pmedec_f9a, k_pmedec_f91, sea_alesfh, sea_alesfh_fav, sea_alesfh_f50, sea_alec, sea_alec_fav, sea_alec_f50, sea_alec_f53, sea_sesfh, sea_sesfh_fav, sea_sesfh_f50, sea_sec, sea_sec_fav, sea_sec_f50, sea_sec_f51, sea_sec_f52, sea_pmedesfh, sea_pmedesfh_fav, sea_pmedesfh_f90, sea_pmedesfh_f91, sea_pmedec, sea_pmedec_fav, sea_pmedec_f90, sea_pmedec_f9a, sea_pmedec_f91, date
+  Seattle condo columns found: sea_pmedec_fav, sea_sec_fav, sea_alec_fav
+  King County condo columns detected: k_pmedec_fav, k_sec_fav, k_alec_fav
+💾 NWMLS condo forecast cached to: nwmls_condo_fcst_2026_2031_baseline.rds
+xx_nwmls_condo_to_panel.R loaded (scenario = baseline | SEA condo = TRUE | KC condo = TRUE)
+  💾 cached: panel_tbl_res (6126.1 MB)
+  💾 cached: panel_tbl_com (714.3 MB)
+  💾 cached: panel_tbl_condo (3824.8 MB)
+  💾 cached: panel_tbl_all (10463.2 MB)
+  🧹 freed: parcel_res_full, parcel_comm_full, parcel_condo_full, condo_complex_cln, av_history_cln, av_dt, panel_tbl, panel_tbl_all  (14800.4 MB)
+  🧹 freed: panel_tbl_com, panel_tbl_condo  (4539.1 MB)
+
+--- Step 3: Models ---
+
+  [Condo models]
+  Training condo LightGBM models (land + impr) ...
+  Loaded panel_tbl_condo from cache.
+  appr_land_val all-NA in panel_tbl_condo — re-joining from av_history_cln ...
+    AV re-join complete.
+  Computed log AV + lag columns for condo panel
+  Econ features available: 10
+  Condo LAND model — base rows: 750768
+
+  --- Condo LAND DELTA model ---
+    Rows (lag present): 728100
+    Training delta CV (rolling folds) ...
+    Rolling CV: 5 chronological folds
+    Best iter: 1  [rolling CV]
+    ✅ Saved: lgb_condo_land_delta_cv_20261010_154743.rds
+    Top 10 delta features:
+                           Feature       Gain
+                            <char>      <num>
+ 1: econ_population_thous_yoy_lag1 0.24732155
+ 2:        nwmls_condo_active_list 0.19575013
+ 3:               nbr_stories_cplx 0.08130468
+ 4:                  has_elevators 0.07665194
+ 5:  nwmls_condo_active_list_delta 0.07428541
+ 6:                      nbr_units 0.04979976
+ 7:   nwmls_condo_active_list_lag1 0.03478327
+ 8:                  yr_built_cplx 0.03154414
+ 9:                  avg_unit_size 0.02901820
+10:                    eff_yr_cplx 0.02897895
+
+  --- Condo LAND LEVEL model ---
+    Rows: 750768
+    Training level CV (rolling folds) ...
+    Rolling CV: 5 chronological folds
+    Best iter: 540  [rolling CV]
+    ✅ Saved: lgb_condo_land_level_cv_20261010_154743.rds
+
+Condo LAND model RMSE summary:
+  Delta CV RMSE (log change)      : 0.1435
+  Delta CV RMSE (reconstructed)   : 0.1435
+  Level CV RMSE : 0.607
+
+DELTA model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel      0.397         12   0.0331
+2 nwmls       0.339          5   0.0678
+3 econ        0.264          2   0.132 
+
+DELTA model — top features by group:
+# A tibble: 12 × 3
+   group  feature                             gain
+   <chr>  <chr>                              <dbl>
+ 1 econ   econ_population_thous_yoy_lag1   0.247  
+ 2 econ   econ_services_providing_yoy_lag1 0.0168 
+ 3 nwmls  nwmls_condo_active_list          0.196  
+ 4 nwmls  nwmls_condo_active_list_delta    0.0743 
+ 5 nwmls  nwmls_condo_active_list_lag1     0.0348 
+ 6 nwmls  nwmls_condo_med_price_lag1       0.0252 
+ 7 nwmls  nwmls_condo_med_price_delta      0.00872
+ 8 parcel nbr_stories_cplx                 0.0813 
+ 9 parcel has_elevators                    0.0767 
+10 parcel nbr_units                        0.0498 
+11 parcel yr_built_cplx                    0.0315 
+12 parcel avg_unit_size                    0.0290 
+
+LEVEL model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel     0.717          29  0.0247 
+2 nwmls      0.251           8  0.0313 
+3 econ       0.0317          4  0.00794
+
+LEVEL model — top features by group:
+# A tibble: 14 × 3
+   group  feature                                                                    gain
+   <chr>  <chr>                                                                     <dbl>
+ 1 nwmls  nwmls_condo_med_price                                                  0.169   
+ 2 nwmls  nwmls_condo_med_price_lag1                                             0.0336  
+ 3 nwmls  nwmls_condo_med_price_lag2                                             0.0305  
+ 4 nwmls  nwmls_condo_active_list_lag2                                           0.00544 
+ 5 nwmls  nwmls_condo_active_list                                                0.00524 
+ 6 parcel nbr_units                                                              0.103   
+ 7 parcel avg_unit_size                                                          0.0994  
+ 8 parcel nbr_stories_cplx                                                       0.0863  
+ 9 parcel log_avg_unit_size                                                      0.0759  
+10 parcel yr_built_cplx                                                          0.0724  
+11 econ   econ_population_thous_lvl_lag1                                         0.0251  
+12 econ   econ_employment_thous_lvl_lag1                                         0.00614 
+13 econ   econ_services_providing_lvl_lag1                                       0.000350
+14 econ   econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1 0.000191
+
+03_model_condo_land.R loaded — condo land models trained.
+  appr_land_val all-NA in panel_tbl_condo — re-joining from av_history_cln ...
+    AV re-join complete.
+  Computed log AV + lag columns for condo panel
+  Econ features available: 10
+  Condo IMPR model — base rows: 753000
+
+  --- Condo IMPR DELTA model ---
+    Rows (lag present): 730322
+    Training delta CV (rolling folds) ...
+    Rolling CV: 5 chronological folds
+    Best iter: 1  [rolling CV]
+    ✅ Saved: lgb_condo_impr_delta_cv_20261010_155423.rds
+    Top 10 delta features:
+                           Feature       Gain
+                            <char>      <num>
+ 1:          nwmls_condo_med_price 0.27763606
+ 2:               nbr_stories_cplx 0.23822731
+ 3:                  yr_built_cplx 0.08527967
+ 4: econ_employment_thous_yoy_lag1 0.06915325
+ 5:    nwmls_condo_med_price_delta 0.05456172
+ 6:            effective_unit_sqft 0.05451327
+ 7:              bldg_quality_cplx 0.05057524
+ 8:               project_location 0.04749489
+ 9:        nwmls_condo_active_list 0.02311801
+10:                      nbr_bldgs 0.02256342
+
+  --- Condo IMPR LEVEL model ---
+    Rows: 753000
+    Training level CV (rolling folds) ...
+    Rolling CV: 5 chronological folds
+    Best iter: 103  [rolling CV]
+    ✅ Saved: lgb_condo_impr_level_cv_20261010_155423.rds
+
+Condo IMPR model RMSE summary:
+  Delta CV RMSE (log change)      : 0.3837
+  Delta CV RMSE (reconstructed)   : 0.3837
+  Level CV RMSE : 0.4472
+
+DELTA model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel     0.559          14   0.0399
+2 nwmls      0.367           5   0.0734
+3 econ       0.0740          3   0.0247
+
+DELTA model — top features by group:
+# A tibble: 13 × 3
+   group  feature                                gain
+   <chr>  <chr>                                 <dbl>
+ 1 nwmls  nwmls_condo_med_price               0.278  
+ 2 nwmls  nwmls_condo_med_price_delta         0.0546 
+ 3 nwmls  nwmls_condo_active_list             0.0231 
+ 4 nwmls  nwmls_condo_med_price_lag2          0.00665
+ 5 nwmls  nwmls_condo_active_list_lag1        0.00526
+ 6 parcel nbr_stories_cplx                    0.238  
+ 7 parcel yr_built_cplx                       0.0853 
+ 8 parcel effective_unit_sqft                 0.0545 
+ 9 parcel bldg_quality_cplx                   0.0506 
+10 parcel project_location                    0.0475 
+11 econ   econ_employment_thous_yoy_lag1      0.0692 
+12 econ   econ_services_providing_yoy_lag1    0.00271
+13 econ   econ_housing_permits_thous_yoy_lag1 0.00218
+
+LEVEL model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel     0.917          32  0.0287 
+2 nwmls      0.0650          8  0.00812
+3 econ       0.0178          4  0.00445
+
+LEVEL model — top features by group:
+# A tibble: 14 × 3
+   group  feature                                                                    gain
+   <chr>  <chr>                                                                     <dbl>
+ 1 parcel nbr_bedrooms                                                           0.258   
+ 2 parcel yr_built_cplx                                                          0.148   
+ 3 parcel effective_unit_sqft                                                    0.0985  
+ 4 parcel age_cplx                                                               0.0890  
+ 5 parcel bldg_quality_cplx                                                      0.0722  
+ 6 nwmls  nwmls_condo_med_price_lag1                                             0.0287  
+ 7 nwmls  nwmls_condo_med_price                                                  0.0185  
+ 8 nwmls  nwmls_condo_active_list_lag2                                           0.00584 
+ 9 nwmls  nwmls_condo_med_price_lag2                                             0.00476 
+10 nwmls  nwmls_condo_active_list                                                0.00417 
+11 econ   econ_employment_thous_lvl_lag1                                         0.0125  
+12 econ   econ_population_thous_lvl_lag1                                         0.00261 
+13 econ   econ_services_providing_lvl_lag1                                       0.00247 
+14 econ   econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1 0.000227
+
+03_model_condo_impr.R loaded — condo improvement models trained.
+  ✅ Condo models trained and saved.
+  🧹 freed: model_data_condo_land_delta, model_data_condo_land_level, model_data_condo_impr_delta, model_data_condo_impr_level  (4349 MB)
+  ✅ loaded training frame: model_data_condo_land_delta
+  ✅ loaded training frame: model_data_condo_land_level
+  ✅ loaded training frame: model_data_condo_impr_delta
+  ✅ loaded training frame: model_data_condo_impr_level
+  🧹 freed: model_data_condo_land_delta, model_data_condo_land_level, model_data_condo_impr_delta, model_data_condo_impr_level  (4349 MB)
+
+--- Step 4c: Retrofit historical AV (condo) ---
+  log_appr_land_val all-NA in condo retro panel — re-joining AV ...
+    AV re-join complete for condo: land non-NA = 851,951 | impr non-NA = 851,951
+Processed 97564 groups out of 97564. 100% done. Time elapsed: 11s. ETA: 0s.
+Processed 97564 groups out of 97564. 100% done. Time elapsed: 10s. ETA: 0s.
+Processed 97564 groups out of 97564. 100% done. Time elapsed: 10s. ETA: 0s.
+    locf fill (condo, backfill = TRUE): log_appr_land_val fwd=28,988 back=120,193 | log_appr_imps_val fwd=29,605 back=118,391 | log_total_assessed fwd=28,867 back=117,509
+  💾 cached: panel_tbl_retro_condo
+  🧹 freed: panel_tbl_condo  (3824.8 MB)
+  🧹 freed: panel_tbl_retro_condo  (3824.8 MB)
+
+--- Step 5a: Holdout diagnostics ---
+
+--- Step 5b: Extend panel 2027-2031 (scenario = baseline) ---
+  Extending condo panel 2027 – 2031 | units: 97564
+  NWMLS condo forecast rows: 5
+  Extended condo panel rows: 3122048 | years: 2000 – 2031
+  💾 cached: panel_tbl_2006_2031_inputs_baseline_condo.rds
+05_extend_panel_2026_2031_condo.R loaded (scenario = baseline)
+  💾 cached: panel_tbl_2027_2031_inputs_baseline_condo.rds
+  🧹 freed: panel_tbl_retro_condo, panel_tbl_retro  (7649.7 MB)
+
+--- Step 6: Sequential forecast 2027-2031 ---
+  [Condo forecast]
+  Forecasting condo AV for years: 2027, 2028, 2029, 2030, 2031
+  land-only gate: 6 of 97,564 units have land but no improvement history through 2026 - improvements held at 0
+    note: 60,708 unit(s) have neither land nor improvement history - NOT gated, these need separate review
+  Forecasting year: 2027
+    Year 2027: 97564 units scored.
+      land-only: 6 unit(s) held at 0 improvements
+  Forecasting year: 2028
+    Year 2028: 97564 units scored.
+      land-only: 6 unit(s) held at 0 improvements
+  Forecasting year: 2029
+    Year 2029: 97564 units scored.
+      land-only: 6 unit(s) held at 0 improvements
+  Forecasting year: 2030
+    Year 2030: 97564 units scored.
+      land-only: 6 unit(s) held at 0 improvements
+  Forecasting year: 2031
+    Year 2031: 97564 units scored.
+      land-only: 6 unit(s) held at 0 improvements
+  💾 cached: panel_tbl_2006_2031_forecasted_baseline_condo.rds
+  💾 parquet: parcel_year_panel_2006_2031_forecasted_baseline_condo.parquet
+
+06_forecast_av_2026_2031_sequential_condo.R loaded (scenario = baseline)
+  🧹 freed: panel_tbl_2027_2031_inputs_baseline_condo, panel_tbl_2006_2031_inputs_baseline_condo  (10207.3 MB)
+
+==============================================
+run_main_ml() finished — elapsed: 47.02 min
+  prop_scope = condo | scenario = baseline
+==============================================
+There were 50 or more warnings (use warnings() to see the first 50)
+
