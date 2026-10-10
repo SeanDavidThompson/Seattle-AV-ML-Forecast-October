@@ -286,6 +286,82 @@ print(dcast(gyy_check[scenario == "baseline"],
             track ~ tax_yr, value.var = "n_matched"))
 
 # ============================================================================
+# 3b. CALIBRATION TO THE ASSESSOR'S PRELIMINARY TY2027 ROLL (optional)
+# ============================================================================
+# Default NULL: off, output unchanged.  To calibrate, set
+#   PRELIM_TOTAL <- 294452027000   # preliminary TY2027 roll, after the senior
+#                                  # exemption = regular-levy basis, like the
+#                                  # certified totals above; includes personal
+#                                  # property and state-assessed value
+#   PRELIM_NC    <- 1631730000     # new construction inside PRELIM_TOTAL
+#   PRELIM_PP    <- NULL           # optional preliminary PP figure
+# When set:
+#   existing 2027 (real + PP) = PRELIM_TOTAL - PRELIM_NC
+#   PP 2027                   = PRELIM_PP if given, else this script's PP
+#                               forecast; state-assessed value rides inside
+#                               PP / the total with no separate adjustment
+#   real 2027 by type         = this script's certified-basis 2027 res / com /
+#                               condo, scaled by one factor so real + PP hits
+#                               the existing total
+#   NC                        = stock 2027 = PRELIM_NC (replaces the CSV's
+#                               2027 flow), then stock x (1 + real growth) +
+#                               the CSV flows for 2028-2031
+#   2028-2031                 = the pipeline's growth rates compounded from
+#                               the calibrated 2027
+# and NC is layered into every chart and table labelled Total ("Total incl.
+# new construction"), so all of them show PRELIM_TOTAL in 2027.
+PRELIM_TOTAL <- NULL
+PRELIM_NC    <- NULL
+PRELIM_PP    <- NULL
+
+prelim_on <- !is.null(PRELIM_TOTAL) || !is.null(PRELIM_NC) || !is.null(PRELIM_PP)
+if (prelim_on) {
+  is_num1 <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x)
+  if (!is_num1(PRELIM_TOTAL) || !is_num1(PRELIM_NC))
+    stop("Preliminary-roll calibration needs BOTH PRELIM_TOTAL and PRELIM_NC as ",
+         "single finite numbers in dollars (or all PRELIM_* NULL to switch it off).")
+  if (!is.null(PRELIM_PP) && !is_num1(PRELIM_PP))
+    stop("PRELIM_PP must be NULL or a single finite number in dollars.")
+  if (PRELIM_TOTAL < 1e9)
+    stop("PRELIM_TOTAL = ", PRELIM_TOTAL, " - give dollars, not billions ",
+         "(e.g. 294452027000).")
+  if (PRELIM_NC < 0 || PRELIM_NC >= PRELIM_TOTAL)
+    stop("PRELIM_NC must be >= 0 and below PRELIM_TOTAL.")
+  if (!is.null(PRELIM_PP) && (PRELIM_PP < 0 || PRELIM_PP >= PRELIM_TOTAL - PRELIM_NC))
+    stop("PRELIM_PP must be >= 0 and below PRELIM_TOTAL - PRELIM_NC.")
+  message("\nPreliminary-roll calibration ON: total ",
+          format(PRELIM_TOTAL, big.mark = ",", scientific = FALSE),
+          " | NC ", format(PRELIM_NC, big.mark = ",", scientific = FALSE),
+          " | PP ", if (is.null(PRELIM_PP)) "script forecast" else
+            format(PRELIM_PP, big.mark = ",", scientific = FALSE))
+}
+
+# NC flow table (tax_yr + one column per scenario) with 2027 set to PRELIM_NC
+# when the calibration is on.  NULL in, calibration off: NULL out.
+# report = TRUE prints the CSV's own 2027 flow next to PRELIM_NC.
+prelim_nc_override <- function(w, report = FALSE) {
+  if (!prelim_on) return(w)
+  sc <- c("baseline", "optimistic", "pessimistic")
+  if (is.null(w)) {
+    message("  No NC forecast CSV: NC = PRELIM_NC in 2027, no NC flows after ",
+            "2027 (the 2027 stock still compounds).")
+    w <- tibble(tax_yr = 2027L)
+  }
+  w <- as_tibble(w) %>% mutate(tax_yr = as.integer(tax_yr))
+  if (!2027L %in% w$tax_yr) w <- bind_rows(w, tibble(tax_yr = 2027L))
+  for (cn in sc) {
+    if (!cn %in% names(w)) w[[cn]] <- NA_real_
+    if (report)
+      message(sprintf("  NC 2027 %-11s CSV flow %s -> PRELIM_NC %s", cn,
+                      format(round(w[[cn]][w$tax_yr == 2027L]), big.mark = ",",
+                             scientific = FALSE),
+                      format(PRELIM_NC, big.mark = ",", scientific = FALSE)))
+    w[[cn]][w$tax_yr == 2027L] <- PRELIM_NC
+  }
+  arrange(w, tax_yr)
+}
+
+# ============================================================================
 # 4. BUILD CERTIFIED-BASED FORECAST (2027-2031)
 # ============================================================================
 message("\nBuilding certified-based forecast...")
@@ -324,6 +400,59 @@ fcst_bas <- build_forecast(list(res_gyy_bas, condo_gyy_bas, com_gyy_bas, pp_gyy_
 fcst_opt <- build_forecast(list(res_gyy_opt, condo_gyy_opt, com_gyy_opt, pp_gyy_opt), "optimistic")
 fcst_pes <- build_forecast(list(res_gyy_pes, condo_gyy_pes, com_gyy_pes, pp_gyy_pes), "pessimistic")
 
+# ---- 4b. Preliminary-roll calibration (section 3b) -------------------------
+# Scaling 2027-2031 of a track by one factor is the same as compounding the
+# pipeline's own growth rates from its calibrated 2027 value.
+calibrate_prelim <- function(fcst) {
+  real_tr <- c("res", "com", "condo")
+  sc <- fcst$scenario[1]
+  miss <- setdiff(c(real_tr, "pp"), unique(fcst$track))
+  if (length(miss))
+    stop("Preliminary-roll calibration (", sc, "): no forecast for track(s) ",
+         paste(miss, collapse = ", "), " - every track must be present to ",
+         "split the existing total.")
+  existing <- PRELIM_TOTAL - PRELIM_NC
+  pp_pipe  <- fcst[track == "pp" & tax_yr == 2027, cert_av]
+  pp27     <- if (is.null(PRELIM_PP)) pp_pipe else PRELIM_PP
+  pipe27   <- fcst[track %in% real_tr & tax_yr == 2027, sum(cert_av)]
+  k    <- (existing - pp27) / pipe27
+  k_pp <- pp27 / pp_pipe
+  out <- copy(fcst)
+  out[track %in% real_tr & tax_yr >= 2027, cert_av := cert_av * k]
+  out[track == "pp" & tax_yr >= 2027, cert_av := cert_av * k_pp]
+  tab <- merge(
+    as.data.table(cert_by_type)[tax_yr == 2026, .(track, certified_2026 = cert_av)],
+    merge(fcst[tax_yr == 2027, .(track, pipeline_2027 = cert_av)],
+          out[tax_yr == 2027, .(track, calibrated_2027 = cert_av)], by = "track"),
+    by = "track", all.y = TRUE)
+  tab <- tab[order(match(track, c(real_tr, "pp")))]
+  tab[, scale := calibrated_2027 / pipeline_2027]
+  tab <- rbind(tab, tab[, .(track = "Existing (real + PP)",
+                            certified_2026 = sum(certified_2026),
+                            pipeline_2027 = sum(pipeline_2027),
+                            calibrated_2027 = sum(calibrated_2027),
+                            scale = NA_real_)])
+  message("\n=== TY2027 by type, ", sc, " ($B): certified 2026 | pipeline 2027 | ",
+          "calibrated 2027 | scale factor ===")
+  message("    real-property scale factor k = ", sprintf("%.6f", k),
+          if (!is.null(PRELIM_PP)) sprintf(" | PP scale (PRELIM_PP) = %.6f", k_pp) else
+            " | PP = script forecast (scale 1)")
+  print(tab[, .(track,
+                certified_2026  = round(certified_2026 / 1e9, 3),
+                pipeline_2027   = round(pipeline_2027 / 1e9, 3),
+                calibrated_2027 = round(calibrated_2027 / 1e9, 3),
+                scale           = round(scale, 6),
+                pipeline_vs_cert   = sprintf("%+.2f%%", 100 * (pipeline_2027 / certified_2026 - 1)),
+                calibrated_vs_cert = sprintf("%+.2f%%", 100 * (calibrated_2027 / certified_2026 - 1)))],
+        row.names = FALSE)
+  out
+}
+if (prelim_on) {
+  fcst_bas <- calibrate_prelim(fcst_bas)
+  fcst_opt <- calibrate_prelim(fcst_opt)
+  fcst_pes <- calibrate_prelim(fcst_pes)
+}
+
 # ============================================================================
 # 5. COMBINE HISTORY + FORECAST
 # ============================================================================
@@ -357,7 +486,11 @@ INCLUDE_NC <- FALSE  # ← 2026-07-30 decision: NC dropped from this lineup
                      #   extraction fix + both plausibility guards remain
                      #   in place below.
 
-if (!INCLUDE_NC) {
+# The preliminary-roll calibration always layers NC in, so every Total
+# (charts, display, summary CSV) includes it and hits PRELIM_TOTAL in 2027.
+nc_in_total <- INCLUDE_NC || prelim_on
+
+if (!nc_in_total) {
   message("\nNew construction layer EXCLUDED (INCLUDE_NC = FALSE).")
 } else {
 
@@ -368,17 +501,22 @@ nc_files <- c(
              pattern = "^OERF_New_Construction_Forecast_.*\\.csv$",
              full.names = TRUE))
 
-if (length(nc_files) == 0) {
+nc_layer_wide <- NULL
+if (length(nc_files) > 0) {
+  nc_path <- sort(nc_files)[length(nc_files)]  # date-suffixed: last = newest
+  message("\nNew construction layer from: ", basename(nc_path))
+  nc_layer_wide <- as.data.table(read_csv(nc_path, show_col_types = FALSE))[
+    , .(tax_yr = as.integer(tax_year), baseline, optimistic, pessimistic)]
+}
+nc_layer_wide <- prelim_nc_override(nc_layer_wide, report = TRUE)  # 2027 = PRELIM_NC if set
+
+if (is.null(nc_layer_wide)) {
   warning("No OERF_New_Construction_Forecast_*.csv found — total EXCLUDES ",
           "new construction. Run 05_new_construction_forecast.R first.",
           call. = FALSE)
 } else {
-  nc_path <- sort(nc_files)[length(nc_files)]  # date-suffixed: last = newest
-  message("\nNew construction layer from: ", basename(nc_path))
-  nc_flow <- as.data.table(read_csv(nc_path, show_col_types = FALSE))
-  nc_flow <- melt(nc_flow[, .(tax_yr = as.integer(tax_year),
-                              baseline, optimistic, pessimistic)],
-                  id.vars = "tax_yr", variable.name = "scenario",
+  nc_flow <- melt(as.data.table(nc_layer_wide), id.vars = "tax_yr",
+                  variable.name = "scenario",
                   value.name = "flow", variable.factor = FALSE)
   nc_flow <- nc_flow[tax_yr >= 2027 & tax_yr <= 2031]
 
@@ -471,16 +609,19 @@ nc_sum_files <- c(
 
 nc_stock_tbl <- NULL
 nc_summary   <- NULL
-if (length(nc_sum_files) == 0) {
-  message("\u26a0\ufe0f  No OERF_New_Construction_Forecast_*.csv found — ",
-          "summary total will EXCLUDE new construction. ",
-          "Run 05_new_construction_forecast.R.")
-} else {
+if (length(nc_sum_files) > 0)
   nc_summary <- read_csv(sort(nc_sum_files)[length(nc_sum_files)],
                          show_col_types = FALSE) %>%
     mutate(tax_yr = as.integer(tax_year)) %>%
     filter(tax_yr >= 2026) %>%
     select(tax_yr, all_of(scen_cols))
+nc_summary <- prelim_nc_override(nc_summary)   # 2027 = PRELIM_NC if set
+
+if (is.null(nc_summary)) {
+  message("\u26a0\ufe0f  No OERF_New_Construction_Forecast_*.csv found — ",
+          "summary total will EXCLUDE new construction. ",
+          "Run 05_new_construction_forecast.R.")
+} else {
 
   # Plausibility guard (same rule as the layer): flows near certified 2026 NC
   cert_nc_2026 <- 4511865685
@@ -518,7 +659,12 @@ if (length(nc_sum_files) == 0) {
 # ---- Total certified AV (incl. cumulative new construction) ----------------
 total_summary <- full_wide[track == "Total" & tax_yr >= 2026,
                            .(tax_yr, baseline, pessimistic, optimistic)]
-if (!is.null(nc_stock_tbl)) {
+if (nc_in_total) {
+  # NC is already a track inside full_wide's Total (section 5b); adding the
+  # stock again would count it twice.
+  message("\n=== Certified-Basis Total AV Summary ",
+          "(Total incl. new construction) ===")
+} else if (!is.null(nc_stock_tbl)) {
   total_summary[nc_stock_tbl, on = "tax_yr",
                 `:=`(baseline    = baseline    + i.baseline,
                      pessimistic = pessimistic + i.pessimistic,
@@ -532,6 +678,35 @@ if (!is.null(nc_stock_tbl)) {
 total_summary <- tibble::as_tibble(total_summary)
 print(total_summary %>%
         mutate(across(all_of(scen_cols), fmt_b)))
+
+if (prelim_on) {
+  cert26 <- certified_av$cert_total[certified_av$tax_yr == 2026]
+  f27 <- full_wide[tax_yr == 2027]
+  fmt_d <- function(x) format(round(x), big.mark = ",", scientific = FALSE)
+  message("\n=== Implied TY2027 total from the preliminary-roll calibration ===")
+  message("  PRELIM_TOTAL ", fmt_d(PRELIM_TOTAL), " = existing ",
+          fmt_d(PRELIM_TOTAL - PRELIM_NC), " + NC ", fmt_d(PRELIM_NC),
+          "  (existing vs certified 2026 ", fmt_d(cert26), ": ",
+          sprintf("%+.4f%%", 100 * ((PRELIM_TOTAL - PRELIM_NC) / cert26 - 1)), ")")
+  for (sc in scen_cols) {
+    ex <- f27[track %in% c("res", "com", "condo", "pp"), sum(get(sc))]
+    nc <- f27[track == "nc", sum(get(sc))]
+    tt <- f27[track == "Total", get(sc)]
+    message(sprintf("  %-11s existing (real + PP) %s + NC %s = Total incl. new construction %s%s",
+                    sc, fmt_d(ex), fmt_d(nc), fmt_d(tt),
+                    if (abs(tt - PRELIM_TOTAL) < 1) "  (= PRELIM_TOTAL)" else "  ** differs from PRELIM_TOTAL **"))
+  }
+
+  message("\n=== Calibrated path by type and total, 2026-2031 ($B) ===")
+  for (sc in scen_cols) {
+    pth <- dcast(full_wide[tax_yr >= 2026], tax_yr ~ track, value.var = sc)
+    setcolorder(pth, c("tax_yr", intersect(c("res", "com", "condo", "pp", "nc", "Total"), names(pth))))
+    for (cn in setdiff(names(pth), "tax_yr")) set(pth, j = cn, value = round(pth[[cn]] / 1e9, 3))
+    setnames(pth, "Total", "Total incl. NC", skip_absent = TRUE)
+    message("--- ", sc, " ---")
+    print(pth, row.names = FALSE)
+  }
+}
 total_csv <- file.path(wrangled_dir,
                        paste0("av_certified_total_summary_", stamp, ".csv"))
 write_csv(total_summary, total_csv)
@@ -570,7 +745,8 @@ for (tr in intersect(c("res", "condo", "com", "pp", "nc", "Total"),
 track_labels <- c("res" = "Residential", "condo" = "Condo",
                    "com" = "Commercial", "pp" = "Personal Property",
                    "nc" = "New Construction (cum.)",
-                   "Total" = "Total (Certified)")
+                   "Total" = if (nc_in_total) "Total incl. new construction"
+                             else "Total (Certified)")
 full_wide[, series := track_labels[track]]
 full_wide[, segment := fifelse(tax_yr <= 2026, "Historical", "Forecast")]
 
@@ -581,7 +757,12 @@ plot_data <- rbind(full_wide, bridge, use.names = TRUE)
 pal <- c("Residential" = "#2E75B6", "Commercial" = "#C00000",
          "Condo" = "#7030A0", "Personal Property" = "#548235",
          "New Construction (cum.)" = "#ED7D31",
-         "Total (Certified)" = "#404040")
+         "Total (Certified)" = "#404040",
+         "Total incl. new construction" = "#404040")
+
+nc_caption <- if (prelim_on)
+  "Calibrated to the Assessor's preliminary TY2027 roll; Total includes new construction." else
+  if (nc_in_total) "Total includes new construction." else "Excludes new construction."
 
 theme_av <- theme_minimal(base_size = 12) +
   theme(
@@ -609,7 +790,7 @@ p1 <- ggplot(plot_data, aes(x = tax_yr)) +
   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
   labs(title = "Seattle Assessed Value by Property Type (Certified Basis)",
        subtitle = "Certified real property split by type shares + PP layer; ML matched-parcel growth forward",
-       caption = "Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. Excludes new construction.\nSource: KC Assessor, CoStar, S&P Global, OERF",
+       caption = paste0("Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. ", nc_caption, "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
        y = "Assessed Value ($B)") +
   theme_av
 
@@ -628,7 +809,7 @@ p2 <- ggplot(plot_data, aes(x = tax_yr)) +
   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
   labs(title = "Seattle AV Forecast by Property Type (Certified Basis)",
        subtitle = "Faceted with free y-scales",
-       caption = "Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. Excludes new construction.\nSource: KC Assessor, CoStar, S&P Global, OERF",
+       caption = paste0("Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. ", nc_caption, "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
        y = "Assessed Value ($B)") +
   theme_av +
   theme(legend.position = "none", strip.text = element_text(face = "bold"))
@@ -657,7 +838,10 @@ p3 <- ggplot(total_plot, aes(x = tax_yr)) +
   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
   labs(title = "Seattle Total Assessed Value Forecast (Certified Basis)",
        subtitle = "Certified AV with ML matched-parcel growth rates (2027-2031)",
-       caption = "All years anchored to certified AV.\nSource: KC Assessor, CoStar, S&P Global, OERF",
+       caption = paste0("All years anchored to certified AV. ",
+                        if (nc_in_total) "Total includes new construction. " else "",
+                        if (prelim_on) "TY2027 calibrated to the Assessor's preliminary roll." else "",
+                        "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
        y = "Assessed Value ($B)") +
   theme_av
 
