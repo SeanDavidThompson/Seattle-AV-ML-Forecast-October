@@ -1,0 +1,51 @@
+== step b: res_driver_audit on the level models
+== started  2026-10-10 02:22:20 
+
+Attaching package: 'data.table'
+
+The following object is masked from 'package:base':
+
+    %notin%
+
+land delta: lgb_land_delta_cv_20261010_011253.rds | nwmls_features = level | 81 features
+impr delta: lgb_impr_delta_cv_20261010_012350.rds | nwmls_features = level | 61 features
+  baseline: reading panel_tbl_2027_2031_inputs_baseline_res.rds ...
+  baseline: reading panel_tbl_2006_2031_forecasted_baseline_res.rds ...
+  optimistic: no extended inputs panel - skipping
+  pessimistic: no extended inputs panel - skipping
+
+=== RESIDENTIAL DRIVER AUDIT [level] ===
+land delta (level): NWMLS features carry 56.0% of gain, econ 6.2%.
+  top drivers: sea_pmedesfh_lag12 29.9%, sea_pmedesfh_lag6 8.7%, sea_alesfh_lag12 7.3%
+impr delta (level): NWMLS features carry 19.4% of gain, econ 25.7%.
+  top drivers: econ_housing_permits_thous_yoy_lag1 11.5%, econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_yoy_lag1 7.2%, sea_sesfh_lag12 6.0%
+
+Flagged drivers with >= 1% gain (any signature):
+    model scenario                        feature gain_pct  mono out_of_range
+   <char>   <char>                         <char>    <num> <num>       <lgcl>
+1:   impr baseline econ_population_thous_yoy_lag1      1.2  0.58        FALSE
+   no_splits below above
+      <lgcl> <num> <num>
+1:      TRUE     1     0
+
+Nearest training year by 12-month mean median SFH price:
+   scenario fcst_tax_yr fcst_price looks_like that_yr_land that_yr_impr
+     <char>       <int>      <num>      <int>        <num>        <num>
+1: baseline        2027     959310       2025       0.0713       0.0910
+2: baseline        2028     945410       2025       0.0713       0.0910
+3: baseline        2029     950110       2025       0.0713       0.0910
+4: baseline        2030     967321       2026       0.0375       0.0698
+5: baseline        2031     981477       2026       0.0375       0.0698
+   pred_land pred_impr
+       <num>     <num>
+1:        NA        NA
+2:    0.1170    0.0318
+3:    0.1142    0.0211
+4:    0.1116    0.0303
+5:    0.1106    0.0300
+  baseline: the model treats TY2027 like TY2025, TY2028 like TY2025, TY2029 like TY2025, TY2030 like TY2026, TY2031 like TY2026.
+If scenarios map to different training years, the forecast differences
+between them come from those years' history, not from the price path.
+
+CSVs: ./output/exhibits/res_driver_audit_features_level.csv | ./output/exhibits/res_driver_audit_nearest_year_level.csv
+== finished  2026-10-10 02:24:25  status= ok 

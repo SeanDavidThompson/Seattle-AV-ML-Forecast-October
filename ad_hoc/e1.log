@@ -1,0 +1,289 @@
+== step e1: sensitivity, level models
+== started  2026-10-10 03:19:01 
+
+Models (level mode):
+  lgb_land_delta_cv_20261010_011253.rds
+  lgb_impr_delta_cv_20261010_012350.rds
+Scratch: Z:/AV ML Model Oct/data/scratch_nwmls_sens_level
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+New names:
+• `` -> `...1`
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+NWMLS export: 2026-06_nwmls_housing_forecast_baseline.xlsx
+Last observed month: 2026-06 -> shocking months after it
+Extended panel: panel_tbl_2027_2031_inputs_baseline_res.rds ...
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+Unshocked rebuild reproduces the panel's NWMLS levels exactly.
+00_init.R loaded. the cake is still a lie.
+Area-report anchors: area_report_actuals_2026.rds (as in production)
+
+=== minus5 (price x 0.95 after 2026-06) ===
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+
+============================================================
+SCENARIO: BASELINE
+============================================================
+History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
+Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
+  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
+
+--- tax_yr = 2027 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  actuals anchor (2027): land=166330 | impr=160530 rows across 28 areas; unmatched rows fall back to ML
+  land: no eligible rows (lag missing or already filled)
+  impr: no eligible rows (lag missing or already filled)
+  land-only: 5,800 of 166,330 parcels have land but no improvement history through 2026 - improvements treated as 0 in totals
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2028 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2029 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2030 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2031 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+💾 cached: panel_tbl_2006_2031_forecasted_baseline_res.rds
+💾 parquet: parcel_year_panel_2006_2031_forecasted_baseline_res.parquet
+
+--- Method counts, all scenarios ---
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+
+06_forecast_av_2026_2031_sequential.R complete (scenario = baseline).
+
+=== base (price x 1 after 2026-06) ===
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+
+============================================================
+SCENARIO: BASELINE
+============================================================
+History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
+Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
+  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
+
+--- tax_yr = 2027 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  actuals anchor (2027): land=166330 | impr=160530 rows across 28 areas; unmatched rows fall back to ML
+  land: no eligible rows (lag missing or already filled)
+  impr: no eligible rows (lag missing or already filled)
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2028 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2029 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2030 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2031 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+💾 cached: panel_tbl_2006_2031_forecasted_baseline_res.rds
+💾 parquet: parcel_year_panel_2006_2031_forecasted_baseline_res.parquet
+
+--- Method counts, all scenarios ---
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+
+06_forecast_av_2026_2031_sequential.R complete (scenario = baseline).
+
+=== plus5 (price x 1.05 after 2026-06) ===
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+
+============================================================
+SCENARIO: BASELINE
+============================================================
+History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
+Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
+  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
+
+--- tax_yr = 2027 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  actuals anchor (2027): land=166330 | impr=160530 rows across 28 areas; unmatched rows fall back to ML
+  land: no eligible rows (lag missing or already filled)
+  impr: no eligible rows (lag missing or already filled)
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2028 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2029 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2030 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+
+--- tax_yr = 2031 ---
+  rows=166330 | land_NA=166330 | impr_NA=166330
+  land: 166330 rows predicted
+  impr: 160530 rows predicted
+  land-only: 5800 rows set to 0 improvements
+  total NA=0
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+💾 cached: panel_tbl_2006_2031_forecasted_baseline_res.rds
+💾 parquet: parcel_year_panel_2006_2031_forecasted_baseline_res.parquet
+
+--- Method counts, all scenarios ---
+# A tibble: 5 × 9
+  tax_yr      n land_actual land_delta land_na impr_actual impr_delta impr_na
+   <dbl>  <int>       <int>      <int>   <int>       <int>      <int>   <int>
+1   2027 166330      166330          0       0      160530          0       0
+2   2028 166330           0     166330       0           0     160530       0
+3   2029 166330           0     166330       0           0     160530       0
+4   2030 166330           0     166330       0           0     160530       0
+5   2031 166330           0     166330       0           0     160530       0
+# ℹ 1 more variable: scenario <chr>
+
+06_forecast_av_2026_2031_sequential.R complete (scenario = baseline).
+
+=== Residential total AV, NWMLS price -5% / base / +5% (level models) ===
+Key: <tax_yr>
+   tax_yr minus5_bn base_bn plus5_bn minus5_vs_base plus5_vs_base g_minus5
+    <int>     <num>   <num>    <num>         <char>        <char>   <char>
+1:   2026    168.69  168.69   168.69        +0.000%       +0.000%    4.46%
+2:   2027    167.27  167.27   167.27        +0.000%       +0.000%   -0.85%
+3:   2028    174.52  174.93   174.72        -0.235%       -0.119%    4.34%
+4:   2029    181.52  182.34   181.93        -0.450%       -0.226%    4.01%
+5:   2030    189.69  190.66   190.26        -0.511%       -0.211%    4.50%
+6:   2031    198.43  199.45   199.06        -0.510%       -0.193%    4.61%
+   g_base g_plus5
+   <char>  <char>
+1:  4.46%   4.46%
+2: -0.85%  -0.85%
+3:  4.58%   4.46%
+4:  4.24%   4.13%
+5:  4.56%   4.58%
+6:  4.61%   4.63%
+
+FAIL  [level]  total AV ordered -5% < base < +5% in every year 2028-2031 -- fails in 2028, 2029, 2030, 2031
+CSV: Z:/AV ML Model Oct/output/exhibits/nwmls_sensitivity_level.csv
+Elapsed: 25.1 min
+== finished  2026-10-10 03:44:10  status= ok 

@@ -1,0 +1,11 @@
+== step c: stage growth inputs
+== started  2026-10-10 02:24:26 
+  panel_tbl_res.rds                                  94.7 MB  OK
+  panel_tbl_retro_res.rds                           106.1 MB  OK
+  econ_fcst_2026_2031_baseline.rds                    0.0 MB  OK
+  econ_fcst_2026_2031_optimistic.rds                  0.0 MB  OK
+  econ_fcst_2026_2031_pessimistic.rds                 0.0 MB  OK
+  area_report_actuals_2026.rds                        0.0 MB  OK
+
+6 file(s) staged to Z:/AV ML Model Oct/data/cache_nwmls_growth (200.7 MB). Safe to run the growth A/B.
+== finished  2026-10-10 02:24:44  status= ok 

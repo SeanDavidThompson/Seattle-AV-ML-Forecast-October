@@ -1,0 +1,143 @@
+== step s0: NWMLS forecast caches from the newest vintage
+== started  2026-10-10 02:03:24 
+     scenario                                            file vintage
+1    baseline    2026-06_nwmls_housing_forecast_baseline.xlsx 2026-06
+2  optimistic  2026-06_nwmls_housing_forecast_optimistic.xlsx 2026-06
+3 pessimistic 2026-06_nwmls_housing_forecast_pessimistic.xlsx 2026-06
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+New names:
+• `` -> `...1`
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_optimistic.xlsx (vintage 2026-06)
+New names:
+• `` -> `...1`
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_optimistic.rds
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_pessimistic.xlsx (vintage 2026-06)
+New names:
+• `` -> `...1`
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_pessimistic.rds
+                 scenario tax_yr prev_price_lag12 new_price_lag12 changed
+baseline.1       baseline   2026         988383.2        988383.2   FALSE
+baseline.2       baseline   2027         959309.7        959309.7   FALSE
+baseline.3       baseline   2028         945409.7        945409.7   FALSE
+baseline.4       baseline   2029         950109.7        950109.7   FALSE
+baseline.5       baseline   2030         967321.5        967321.5   FALSE
+baseline.6       baseline   2031         981477.0        981477.0   FALSE
+optimistic.1   optimistic   2026         988383.2        988383.2   FALSE
+optimistic.2   optimistic   2027         956452.8        956452.8   FALSE
+optimistic.3   optimistic   2028         937465.9        937465.9   FALSE
+optimistic.4   optimistic   2029         943118.9        943118.9   FALSE
+optimistic.5   optimistic   2030         961586.7        961586.7   FALSE
+optimistic.6   optimistic   2031         975730.1        975730.1   FALSE
+pessimistic.1 pessimistic   2026         988383.2        988383.2   FALSE
+pessimistic.2 pessimistic   2027         955693.9        955693.9   FALSE
+pessimistic.3 pessimistic   2028         917979.7        917979.7   FALSE
+pessimistic.4 pessimistic   2029         910663.5        910663.5   FALSE
+pessimistic.5 pessimistic   2030         927519.4        927519.4   FALSE
+pessimistic.6 pessimistic   2031         947716.0        947716.0   FALSE
+== finished  2026-10-10 02:03:29  status= ok 

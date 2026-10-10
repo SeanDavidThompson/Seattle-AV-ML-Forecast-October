@@ -1,0 +1,384 @@
+== step d: growth baseline residential retrain
+== started  2026-10-10 02:24:45 
+==============================================
+run_main_ml() started at: 2026-10-10 02:24:46
+replicate=TRUE | panel_replicate=FALSE | model_replicate=TRUE | retrofit=FALSE | diagnostics=FALSE | extend=TRUE | forecast_only=FALSE
+scenario = baseline | prop_scope = res
+forecast = 2027-2031
+use_area_actuals = TRUE (reports year 2026)
+use_health_ratings = TRUE
+nwmls_features = growth
+kca_date = 2026-09-25 | seed = 123
+import_raw_changes = FALSE
+==============================================
+00_init.R loaded. the cake is still a lie.
+
+--- Step 0: Import actual AV growth from area reports ---
+  geo_actuals_scope = nonspecialty | specialty_actuals_policy = model
+
+--- area_report_import.R (assessment year 2026) ---
+Warning: 2026: PDFs outside residential/ or commercial/ (parsed anyway): 001-002-003-004-.pdf, 006-007-.pdf, 008-044-046-.pdf, 011-012-013-014-016-017-018-.pdf, 012.pdf, 015-.pdf, 015.pdf, 019-042-043-082-.pdf, 021-.pdf, 034.pdf, 039-.pdf, 045-.pdf, 100.pdf, 101.pdf, 153.pdf, 160.pdf, 250.pdf, 280.pdf, 410.pdf, 413.pdf, 500.pdf, 510.pdf, 520.PDF, 540.pdf, 608.pdf, 625.pdf, 700_01.pdf, 700_02.pdf, 700_03.pdf, 700_04.pdf, 700_05.pdf, 700_06.pdf, 700_07.pdf, 700_08.pdf, 720.pdf, 800.PDF, central.pdf, north.pdf, south.pdf
+  ✅ 001-002-003-004-.pdf [res]: 4 areas
+  ✅ 006-007-.pdf [res]: 2 areas
+  ✅ 008-044-046-.pdf [res]: 3 areas
+  ✅ 011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ 012.pdf [com_geo]: 1 areas
+  ✅ 015-.pdf [res]: 1 areas
+Warning: 015.pdf: 2 'Change in Total Assessed Value' sections, expected 8
+Warning: 015.pdf: value section at line 488 has no preceding area heading
+Warning: 015.pdf: value section at line 496 has no preceding area heading
+Warning: No area growth table recognised in: 015.pdf (routed as com_geo)
+  ✅ 019-042-043-082-.pdf [res]: 4 areas
+  ✅ 021-.pdf [res]: 1 areas
+  ✅ 034.pdf [com_geo]: 1 areas
+  ✅ 039-.pdf [res]: 1 areas
+  ✅ 045-.pdf [res]: 1 areas
+  ✅ 100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+Warning: 101.pdf: specialty 101,102 is not in KCA_SPECIALTY_AREAS
+Warning: 101.pdf: no 'Specialty Area 101 -' / 'Spec 101' heading
+Warning: 101.pdf: no 'Specialty Area 102 -' / 'Spec 102' heading
+Warning: No area growth table recognised in: 101.pdf (routed as spec)
+  ✅ 153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ 160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ 250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ 280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+Warning: 410.pdf: specialty 410 is not in KCA_SPECIALTY_AREAS
+  ✅ 410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ 413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ 500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ 510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ 520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+Warning: 540.pdf: specialty 540 is not in KCA_SPECIALTY_AREAS
+  ✅ 540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ 608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ 625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ 700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ 700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ 700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ 700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ 700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ 700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ 700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ 700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ 720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+Warning: 800.PDF: specialty 800 is not in KCA_SPECIALTY_AREAS
+  ✅ 800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ central.pdf [com_geo]: 8 areas
+  ✅ commercial/012.pdf [com_geo]: 1 areas
+Warning: commercial/015.pdf: 2 'Change in Total Assessed Value' sections, expected 8
+Warning: commercial/015.pdf: value section at line 488 has no preceding area heading
+Warning: commercial/015.pdf: value section at line 496 has no preceding area heading
+Warning: No area growth table recognised in: commercial/015.pdf (routed as com_geo)
+  ✅ commercial/034.pdf [com_geo]: 1 areas
+  ✅ commercial/100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+Warning: commercial/101.pdf: specialty 101,102 is not in KCA_SPECIALTY_AREAS
+Warning: commercial/101.pdf: no 'Specialty Area 101 -' / 'Spec 101' heading
+Warning: commercial/101.pdf: no 'Specialty Area 102 -' / 'Spec 102' heading
+Warning: No area growth table recognised in: commercial/101.pdf (routed as spec)
+  ✅ commercial/153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ commercial/160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ commercial/250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ commercial/280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+Warning: commercial/410.pdf: specialty 410 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ commercial/413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ commercial/500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ commercial/510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ commercial/520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+Warning: commercial/540.pdf: specialty 540 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ commercial/608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ commercial/625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ commercial/700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ commercial/700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ commercial/700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ commercial/700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ commercial/700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ commercial/700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ commercial/700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ commercial/700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ commercial/720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+Warning: commercial/800.PDF: specialty 800 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ commercial/central.pdf [com_geo]: 8 areas
+  ✅ commercial/north.pdf [com_geo]: 8 areas
+  ✅ commercial/south.pdf [com_geo]: 7 areas
+  ✅ north.pdf [com_geo]: 8 areas
+  ✅ residential/001-002-003-004-.pdf [res]: 4 areas
+  ✅ residential/006-007-.pdf [res]: 2 areas
+  ✅ residential/008-044-046-.pdf [res]: 3 areas
+  ✅ residential/011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ residential/015-.pdf [res]: 1 areas
+  ✅ residential/019-042-043-082-.pdf [res]: 4 areas
+  ✅ residential/021-.pdf [res]: 1 areas
+  ✅ residential/039-.pdf [res]: 1 areas
+  ✅ residential/045-.pdf [res]: 1 areas
+  ✅ south.pdf [com_geo]: 7 areas
+Warning: Condo neighborhoods listed in more than one report: 270, 310, 315, 470, 35, 40, 65, 70, 85, 5, 10, 25, 30, 15, 20, 45, 50, 55, 60, 75, 80, 330, 335, 340, 345, 350, 355, 360, 365, 450, 455, 465, 480, 370, 375, 380, 385, 390, 395, 400, 425, 430, 435, 460, 490, 240, 245, 250, 255, 260, 265, 275, 280, 285, 290, 295, 300, 305, 320, 325, 160, 165, 170, 175, 185, 190, 195, 200, 205, 210, 215, 220, 225, 230, 235, 475, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 405, 410, 415, 420
+Warning: Duplicate entries across reports (same kind/area/basis): geo-10, geo-12, geo-14, geo-17, geo-19, geo-20, geo-25, geo-30, geo-34, geo-35, geo-36, geo-40, geo-45, geo-47, geo-50, geo-55, geo-60, geo-62, geo-65, geo-70, geo-75, geo-80, geo-85, geo-90, geo-95, specialty-100, specialty-153, specialty-160, specialty-174, specialty-250, specialty-280, specialty-410, specialty-413, specialty-500, specialty-510, specialty-520, specialty-540, specialty-608, specialty-625, specialty-800, specialty_region-100, specialty_region-100, specialty_region-100, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, geo-1, geo-1, geo-2, geo-2, geo-3, geo-3, geo-4, geo-4, geo-6, geo-6, geo-7, geo-7, geo-8, geo-8, geo-11, geo-11, geo-12, geo-12, geo-13, geo-13, geo-14, geo-14, geo-15, geo-15, geo-16, geo-16, geo-17, geo-17, geo-18, geo-18, geo-19, geo-19, geo-21, geo- [... truncated]
+  specialty rates parsed for areas: 100, 153, 160, 174, 250, 280, 410, 413, 500, 510, 520, 540, 608, 625, 800
+  year  found  parsed  unparsed  known_gap
+  2026     78      74         4          0
+  not parsed:
+    2026 015.pdf                      unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 101.pdf                      unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+    2026 commercial/015.pdf           unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 commercial/101.pdf           unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+  💾 cached: area_report_actuals_2026.rds
+  💾 csv: area_report_actuals_2026.csv
+  Actual 2025→2026 AV growth (population basis):
+    com   43 cells | min -31.0% | median +0.5% | max +28.3%
+    condo 18 cells | min -6.5% | median -4.7% | max -2.4%
+    res   34 cells | min -5.8% | median -1.4% | max +2.0%
+area_report_import.R complete.
+  area_report_actuals available: 51 geographic areas | 16 specialty areas
+
+--- Step 1: Skipped (panel_replicate=FALSE — panels load from cache in Step 2) ---
+
+--- Step 2: Panel assembly (scenario = baseline) ---
+  panel_replicate=FALSE — loading panels from cache ...
+  ✅ loaded: panel_tbl_res
+
+--- Step 3: Models ---
+
+  [Residential models]
+  Training residential LightGBM models ...
+Parallel backend registered with 15 cores.
+Running 03_model_land.R (LightGBM delta + level rolling CV) ...
+  nwmls_features = "growth" | delta frame NWMLS cols: sea_pmedesfh_lag6_yoy, sea_pmedesfh_lag12_yoy, sea_sesfh_lag6_yoy, sea_sesfh_lag12_yoy, sea_alesfh_lag6_yoy, sea_alesfh_lag12_yoy, sea_mos_sfh_lag12
+  Using panel_tbl_res from .GlobalEnv
+  ℹ️  current_zoning_3 missing from panel (extract schema change) — stubbing constant factor
+  ℹ️  dist_to_public_km missing from panel (legacy feature) — stubbing NA
+  ℹ️  dist_to_private_km missing from panel (legacy feature) — stubbing NA
+  ℹ️  dist_to_lightrail_km missing from panel (legacy feature) — stubbing NA
+  03_model_land: 418770 parcel-years excluded from training (train_res=0)
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): unbuildable, seismic_hazard, landslide_hazard, steep_slope_hazard, dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+LightGBM LAND DELTA rolling CV RMSE (delta): 0.131
+Dropping single-level factor(s): current_zoning_3
+Dropping zero-variance predictor(s): unbuildable, seismic_hazard, landslide_hazard, steep_slope_hazard, dist_to_public_km, dist_to_private_km, dist_to_lightrail_km
+LightGBM LAND LEVEL rolling CV RMSE (log level): 0.5238
+✅ Saved land delta + level artifacts with stamp: 20261010_024648
+
+delta model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 nwmls       0.469          7   0.0670
+2 parcel      0.391         30   0.0130
+3 econ        0.140          6   0.0233
+
+delta model — top features by group:
+# A tibble: 15 × 3
+   group  feature                                                           gain
+   <chr>  <chr>                                                            <dbl>
+ 1 nwmls  sea_sesfh_lag6_yoy                                             0.241  
+ 2 nwmls  sea_pmedesfh_lag6_yoy                                          0.0801 
+ 3 nwmls  sea_pmedesfh_lag12_yoy                                         0.0599 
+ 4 nwmls  sea_alesfh_lag6_yoy                                            0.0415 
+ 5 nwmls  sea_mos_sfh_lag12                                              0.0193 
+ 6 parcel log_appr_land_val_lag1                                         0.149  
+ 7 parcel sq_ft_lot                                                      0.0339 
+ 8 parcel area21                                                         0.0241 
+ 9 parcel log_appr_land_val_lag2                                         0.0227 
+10 parcel area22                                                         0.0188 
+11 econ   econ_employment_thous_yoy_lag1                                 0.0448 
+12 econ   econ_services_providing_yoy_lag1                               0.0301 
+13 econ   econ_population_thous_yoy_lag1                                 0.0266 
+14 econ   econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index… 0.0263 
+15 econ   econ_wholesale_and_retail_trade_yoy_lag1                       0.00732
+
+level model — feature gain by group:
+# A tibble: 3 × 4
+  group  total_gain n_features avg_gain
+  <chr>       <dbl>      <int>    <dbl>
+1 parcel     0.627          62   0.0101
+2 nwmls      0.293           6   0.0489
+3 econ       0.0795          4   0.0199
+
+level model — top features by group:
+# A tibble: 14 × 3
+   group  feature                                                           gain
+   <chr>  <chr>                                                            <dbl>
+ 1 nwmls  sea_pmedesfh_lag12                                             0.187  
+ 2 nwmls  sea_pmedesfh_lag6                                              0.0788 
+ 3 nwmls  sea_sesfh_lag6                                                 0.0175 
+ 4 nwmls  sea_alesfh_lag6                                                0.00475
+ 5 nwmls  sea_sesfh_lag12                                                0.00307
+ 6 parcel sq_ft_lot                                                      0.173  
+ 7 parcel area14                                                         0.0437 
+ 8 parcel area22                                                         0.0395 
+ 9 parcel area77                                                         0.0390 
+10 parcel area21                                                         0.0340 
+11 econ   econ_employment_thous_lvl_lag1                                 0.0398 
+12 econ   econ_population_thous_lvl_lag1                                 0.0298 
+13 econ   econ_services_providing_lvl_lag1                               0.00862
+14 econ   econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index… 0.00126
+03_model_land.R loaded (LightGBM delta + level)
+Running 03_model_impr.R (LightGBM delta + level rolling CV) ...
+  Using panel_tbl_res from .GlobalEnv
+  ℹ️  current_zoning_3 missing from panel (extract schema change) — stubbing constant factor
+  nwmls_features = "growth" | delta frame NWMLS cols: sea_pmedesfh_lag6_yoy, sea_pmedesfh_lag12_yoy, sea_sesfh_lag6_yoy, sea_sesfh_lag12_yoy, sea_alesfh_lag6_yoy, sea_alesfh_lag12_yoy, sea_mos_sfh_lag12
+  03_model_impr: 418770 parcel-years excluded from training (train_res=0)
+Dropping single-level factor(s): current_zoning_3
+LightGBM IMPROVEMENT delta rolling CV RMSE (delta): 0.4159
+💾 cached improvements DELTA model + dv_impr_delta + training frame
+                                             Model      RMSE
+1 LightGBM (delta rolling CV, reconstructed level) 0.3251399
+Dropping single-level factor(s): current_zoning_3
+LightGBM IMPROVEMENT LEVEL rolling CV RMSE (log level): 1.0405
+LEVEL model in-sample RMSE (sanity check; should be <= CV RMSE): 0.7805
+                        Model     RMSE
+1 LightGBM (level rolling CV) 1.040515
+💾 cached improvements LEVEL model + dv_impr_level + training frame
+
+delta model — feature gain by group:
+# A tibble: 4 × 4
+  group   total_gain n_features avg_gain
+  <chr>        <dbl>      <int>    <dbl>
+1 parcel      0.457          30  0.0152 
+2 nwmls       0.264           7  0.0377 
+3 econ        0.212           6  0.0353 
+4 permits     0.0675          7  0.00964
+
+delta model — top features by group:
+# A tibble: 20 × 3
+   group   feature                                                          gain
+   <chr>   <chr>                                                           <dbl>
+ 1 parcel  log_appr_imps_val_lag1                                        2.10e-1
+ 2 parcel  log_appr_land_val                                             1.14e-1
+ 3 parcel  log_appr_imps_val_lag2                                        3.72e-2
+ 4 parcel  area45                                                        2.42e-2
+ 5 parcel  area42                                                        1.28e-2
+ 6 econ    econ_housing_permits_thous_yoy_lag1                           1.57e-1
+ 7 econ    econ_services_providing_yoy_lag1                              4.45e-2
+ 8 econ    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_inde… 9.46e-3
+ 9 econ    econ_population_thous_yoy_lag1                                9.34e-4
+10 econ    econ_employment_thous_yoy_lag1                                3.52e-4
+11 nwmls   sea_pmedesfh_lag6_yoy                                         1.16e-1
+12 nwmls   sea_pmedesfh_lag12_yoy                                        7.63e-2
+13 nwmls   sea_alesfh_lag12_yoy                                          2.62e-2
+14 nwmls   sea_alesfh_lag6_yoy                                           1.71e-2
+15 nwmls   sea_sesfh_lag6_yoy                                            1.39e-2
+16 permits permits_last_5yr                                              1.95e-2
+17 permits permits_last_1yr                                              1.48e-2
+18 permits val_last_3yr                                                  1.46e-2
+19 permits val_last_5yr                                                  9.42e-3
+20 permits units_last_3yr                                                5.55e-3
+
+level model — feature gain by group:
+# A tibble: 4 × 4
+  group   total_gain n_features avg_gain
+  <chr>        <dbl>      <int>    <dbl>
+1 parcel     0.592           31 0.0191  
+2 econ       0.287            4 0.0717  
+3 nwmls      0.114            6 0.0190  
+4 permits    0.00648          7 0.000926
+
+level model — top features by group:
+# A tibble: 19 × 3
+   group   feature                                                          gain
+   <chr>   <chr>                                                           <dbl>
+ 1 parcel  log_appr_land_val                                             2.21e-1
+ 2 parcel  years_since_newconst                                          6.61e-2
+ 3 parcel  area21                                                        2.78e-2
+ 4 parcel  area14                                                        2.63e-2
+ 5 parcel  area13                                                        2.49e-2
+ 6 econ    econ_employment_thous_lvl_lag1                                2.06e-1
+ 7 econ    econ_services_providing_lvl_lag1                              4.06e-2
+ 8 econ    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_inde… 2.58e-2
+ 9 econ    econ_population_thous_lvl_lag1                                1.42e-2
+10 nwmls   sea_pmedesfh_lag12                                            6.31e-2
+11 nwmls   sea_pmedesfh_lag6                                             2.23e-2
+12 nwmls   sea_alesfh_lag6                                               1.17e-2
+13 nwmls   sea_sesfh_lag6                                                7.76e-3
+14 nwmls   sea_sesfh_lag12                                               7.73e-3
+15 permits val_last_5yr                                                  2.48e-3
+16 permits permits_last_1yr                                              1.29e-3
+17 permits units_last_3yr                                                1.09e-3
+18 permits permits_last_3yr                                              6.80e-4
+19 permits val_last_3yr                                                  4.12e-4
+03_model_impr.R loaded (LightGBM delta + level, dv_impr + dv_impr_level built)
+  ✅ Residential models trained and saved.
+  ✅ loaded training frame: model_data_land_delta_model
+  ✅ loaded training frame: model_data_land_model
+  ✅ loaded training frame: model_data_impr_delta_model
+  ✅ loaded training frame: model_data_impr_level_model
+  🧹 freed: panel_tbl  (2802.6 MB)
+  🧹 freed: model_data_land_delta_model, model_data_land_model, model_data_impr_delta_model, model_data_impr_level_model  (2684.6 MB)
+
+--- Step 4a: Retrofit historical AV (residential) ---
+  retrofit_replicate=FALSE and cache exists — loading.
+  ✅ loaded: panel_tbl_retro_res
+  🧹 freed: panel_tbl_res  (2785.5 MB)
+
+--- Step 5a: Holdout diagnostics ---
+  No cached eval metrics found — run with diagnostics_replicate=TRUE to generate.
+
+--- Step 5b: Extend panel 2027-2031 (scenario = baseline) ---
+  NWMLS cache nwmls_fcst_2026_2031_baseline.rds is missing - rebuilding for nwmls_features = "growth"
+  Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+New names:
+• `` -> `...1`
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+Warning in FUN(X[[i]], ...) : NAs introduced by coercion
+  Seattle SFH columns: sea_pmedesfh_fav, sea_sesfh_fav, sea_alesfh_fav
+  King County SFH columns: k_pmedesfh_fav, k_sesfh_fav, k_alesfh_fav
+💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds
+05_extend_panel_2026_2031.R: scenario = baseline
+History through tax_yr = 2026
+Extending to: 2027, 2028, 2029, 2030, 2031
+   n_rows n_unique_parcels n_missing_econ n_missing_nwmls
+    <int>            <int>          <int>           <int>
+1: 831650           166330              0               0
+💾 saved: Z:/AV ML Model Oct/data/cache_nwmls_growth/panel_tbl_2006_2031_inputs_baseline.rds
+💾 saved: Z:/AV ML Model Oct/data/outputs_nwmls_growth/parcel_year_panel_tbl_2006_2031_inputs_baseline.parquet
+05_extend_panel_2026_2031.R complete (scenario = baseline).
+  💾 cached: panel_tbl_2027_2031_inputs_baseline_res.rds
+  🧹 freed: panel_tbl_2006_2031_inputs_baseline  (3766.4 MB)
+  🧹 freed: panel_tbl_retro_res, panel_tbl_retro  (6256.2 MB)
+
+--- Step 6: Sequential forecast 2027-2031 ---
+  [Residential forecast]
+✅ loaded: dv_impr_delta (dv_impr_delta_20261010_025916.rds)
+✅ loaded: model_data_land_delta_model
+✅ loaded: model_data_impr_delta_model
+
+============================================================
+SCENARIO: BASELINE
+============================================================
+History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
+STEP FAILED: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
+  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
+== finished  2026-10-10 03:18:57  status= FAILED 

@@ -1,0 +1,145 @@
+== step h_condo_pessimistic: condo pessimistic (existing models)
+== started  2026-10-10 04:26:34 
+==============================================
+run_main_ml() started at: 2026-10-10 04:26:35
+replicate=TRUE | panel_replicate=FALSE | model_replicate=FALSE | retrofit=FALSE | diagnostics=FALSE | extend=FALSE | forecast_only=TRUE
+scenario = pessimistic | prop_scope = condo
+forecast = 2027-2031
+use_area_actuals = TRUE (reports year 2026)
+use_health_ratings = TRUE
+nwmls_features = level
+kca_date = 2026-09-25 | seed = 123
+import_raw_changes = FALSE
+==============================================
+00_init.R loaded. the cake is still a lie.
+
+--- Step 0: Import actual AV growth from area reports ---
+  geo_actuals_scope = nonspecialty | specialty_actuals_policy = model
+
+--- area_report_import.R (assessment year 2026) ---
+Warning: 2026: PDFs outside residential/ or commercial/ (parsed anyway): 001-002-003-004-.pdf, 006-007-.pdf, 008-044-046-.pdf, 011-012-013-014-016-017-018-.pdf, 012.pdf, 015-.pdf, 015.pdf, 019-042-043-082-.pdf, 021-.pdf, 034.pdf, 039-.pdf, 045-.pdf, 100.pdf, 101.pdf, 153.pdf, 160.pdf, 250.pdf, 280.pdf, 410.pdf, 413.pdf, 500.pdf, 510.pdf, 520.PDF, 540.pdf, 608.pdf, 625.pdf, 700_01.pdf, 700_02.pdf, 700_03.pdf, 700_04.pdf, 700_05.pdf, 700_06.pdf, 700_07.pdf, 700_08.pdf, 720.pdf, 800.PDF, central.pdf, north.pdf, south.pdf
+  ✅ 001-002-003-004-.pdf [res]: 4 areas
+  ✅ 006-007-.pdf [res]: 2 areas
+  ✅ 008-044-046-.pdf [res]: 3 areas
+  ✅ 011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ 012.pdf [com_geo]: 1 areas
+  ✅ 015-.pdf [res]: 1 areas
+Warning: 015.pdf: 2 'Change in Total Assessed Value' sections, expected 8
+Warning: 015.pdf: value section at line 488 has no preceding area heading
+Warning: 015.pdf: value section at line 496 has no preceding area heading
+Warning: No area growth table recognised in: 015.pdf (routed as com_geo)
+  ✅ 019-042-043-082-.pdf [res]: 4 areas
+  ✅ 021-.pdf [res]: 1 areas
+  ✅ 034.pdf [com_geo]: 1 areas
+  ✅ 039-.pdf [res]: 1 areas
+  ✅ 045-.pdf [res]: 1 areas
+  ✅ 100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+Warning: 101.pdf: specialty 101,102 is not in KCA_SPECIALTY_AREAS
+Warning: 101.pdf: no 'Specialty Area 101 -' / 'Spec 101' heading
+Warning: 101.pdf: no 'Specialty Area 102 -' / 'Spec 102' heading
+Warning: No area growth table recognised in: 101.pdf (routed as spec)
+  ✅ 153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ 160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ 250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ 280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+Warning: 410.pdf: specialty 410 is not in KCA_SPECIALTY_AREAS
+  ✅ 410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ 413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ 500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ 510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ 520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+Warning: 540.pdf: specialty 540 is not in KCA_SPECIALTY_AREAS
+  ✅ 540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ 608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ 625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ 700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ 700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ 700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ 700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ 700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ 700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ 700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ 700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ 720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+Warning: 800.PDF: specialty 800 is not in KCA_SPECIALTY_AREAS
+  ✅ 800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ central.pdf [com_geo]: 8 areas
+  ✅ commercial/012.pdf [com_geo]: 1 areas
+Warning: commercial/015.pdf: 2 'Change in Total Assessed Value' sections, expected 8
+Warning: commercial/015.pdf: value section at line 488 has no preceding area heading
+Warning: commercial/015.pdf: value section at line 496 has no preceding area heading
+Warning: No area growth table recognised in: commercial/015.pdf (routed as com_geo)
+  ✅ commercial/034.pdf [com_geo]: 1 areas
+  ✅ commercial/100.pdf [spec]: spec 100, -5.75% total (land -6.05%, imps -5.65%); regions: R1 Central / North -8.36% [33 nbhds], R2 South -10.09% [29 nbhds], R3 East +2.14% [11 nbhds]; 4 rows
+Warning: commercial/101.pdf: specialty 101,102 is not in KCA_SPECIALTY_AREAS
+Warning: commercial/101.pdf: no 'Specialty Area 101 -' / 'Spec 101' heading
+Warning: commercial/101.pdf: no 'Specialty Area 102 -' / 'Spec 102' heading
+Warning: No area growth table recognised in: commercial/101.pdf (routed as spec)
+  ✅ commercial/153.pdf [spec]: spec 153,174, +1.30% -1.50% total (land -1.70%, imps +2.40%); 2 rows
+  ✅ commercial/160.pdf [spec]: spec 160, -1.45% total (land -25.93%, imps +10.62%); 1 rows
+  ✅ commercial/250.pdf [spec]: spec 250, +0.43% total (land -2.15%, imps +7.90%); 1 rows
+  ✅ commercial/280.pdf [spec]: spec 280, -10.80% total (land -28.71%, imps +2.57%); 1 rows
+Warning: commercial/410.pdf: specialty 410 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/410.pdf [spec]: spec 410, +0.00% total (land +0.30%, imps -0.80%); 1 rows
+  ✅ commercial/413.pdf [spec]: spec 413, +0.51% total (land +1.84%, imps -2.33%); 1 rows
+  ✅ commercial/500.pdf [spec]: spec 500, -3.50% total (land +0.57%, imps -5.27%); 1 rows
+  ✅ commercial/510.pdf [spec]: spec 510, -5.40% total (land +17.80%, imps -16.30%); 1 rows
+  ✅ commercial/520.PDF [spec]: spec 520, +1.02% total (land +4.33%, imps -1.93%); 1 rows
+Warning: commercial/540.pdf: specialty 540 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/540.pdf [spec]: spec 540, +1.20% total (land -1.71%, imps +6.53%); 1 rows
+  ✅ commercial/608.pdf [spec]: spec 608, -1.80% total (land -2.20%, imps -1.60%); 1 rows
+  ✅ commercial/625.pdf [spec]: spec 625, +28.28% total (land +1.64%, imps +64.95%); 1 rows
+  ✅ commercial/700_01.pdf [condo]: Capitol Hill, nbhds 35,40,65,70,85, -5.7% total (land -3.1%, imps -7.0%), 8,015 units
+  ✅ commercial/700_02.pdf [condo]: Downtown Seattle, nbhds 5,10,25,30, -3.7% total (land -44.3%, imps +5.1%), 9,090 units
+  ✅ commercial/700_03.pdf [condo]: Queen Anne / Magnolia, nbhds 15,20,45,50,55,60,75,80, -2.8% total (land -5.3%, imps -1.3%), 6,787 units
+  ✅ commercial/700_04.pdf [condo]: I-90 Corridor, nbhds 330,335,340,345,350,355,360,365,450,455,465,480, -5.2% total (land +1.3%, imps -6.4%), 20,175 units
+  ✅ commercial/700_05.pdf [condo]: Northeast King County, nbhds 370,375,380,385,390,395,400,425,430,435,460,490, -4.7% total (land +5.5%, imps -7.6%), 19,980 units
+  ✅ commercial/700_06.pdf [condo]: South King County, nbhds 240,245,250,255,260,265,270,275,280,285,290,295,300,305,310,315,320,325,470, -4.8% total (land +1.8%, imps -5.8%), 19,065 units
+  ✅ commercial/700_07.pdf [condo]: South Seattle, nbhds 160,165,170,175,185,190,195,200,205,210,215,220,225,230,235,475, -6.5% total (land +0.1%, imps -8.9%), 6,234 units
+  ✅ commercial/700_08.pdf [condo]: Northwest King County, nbhds 90,95,100,105,110,115,120,125,130,135,140,145,150,155,405,410,415,420, -2.4% total (land +3.6%, imps -5.2%), 13,811 units
+  ✅ commercial/720.pdf [condo]: Manufactured Home Condominium Parks, nbhds 270,310,315,470, -2.4% total (land +1.2%, imps -3.2%), 606 units
+Warning: commercial/800.PDF: specialty 800 is not in KCA_SPECIALTY_AREAS
+  ✅ commercial/800.PDF [spec]: spec 800, -12.29% total (land -31.15%, imps -7.43%); 1 rows
+  ✅ commercial/central.pdf [com_geo]: 8 areas
+  ✅ commercial/north.pdf [com_geo]: 8 areas
+  ✅ commercial/south.pdf [com_geo]: 7 areas
+  ✅ north.pdf [com_geo]: 8 areas
+  ✅ residential/001-002-003-004-.pdf [res]: 4 areas
+  ✅ residential/006-007-.pdf [res]: 2 areas
+  ✅ residential/008-044-046-.pdf [res]: 3 areas
+  ✅ residential/011-012-013-014-016-017-018-.pdf [res]: 17 areas
+  ✅ residential/015-.pdf [res]: 1 areas
+  ✅ residential/019-042-043-082-.pdf [res]: 4 areas
+  ✅ residential/021-.pdf [res]: 1 areas
+  ✅ residential/039-.pdf [res]: 1 areas
+  ✅ residential/045-.pdf [res]: 1 areas
+  ✅ south.pdf [com_geo]: 7 areas
+Warning: Condo neighborhoods listed in more than one report: 270, 310, 315, 470, 35, 40, 65, 70, 85, 5, 10, 25, 30, 15, 20, 45, 50, 55, 60, 75, 80, 330, 335, 340, 345, 350, 355, 360, 365, 450, 455, 465, 480, 370, 375, 380, 385, 390, 395, 400, 425, 430, 435, 460, 490, 240, 245, 250, 255, 260, 265, 275, 280, 285, 290, 295, 300, 305, 320, 325, 160, 165, 170, 175, 185, 190, 195, 200, 205, 210, 215, 220, 225, 230, 235, 475, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150, 155, 405, 410, 415, 420
+Warning: Duplicate entries across reports (same kind/area/basis): geo-10, geo-12, geo-14, geo-17, geo-19, geo-20, geo-25, geo-30, geo-34, geo-35, geo-36, geo-40, geo-45, geo-47, geo-50, geo-55, geo-60, geo-62, geo-65, geo-70, geo-75, geo-80, geo-85, geo-90, geo-95, specialty-100, specialty-153, specialty-160, specialty-174, specialty-250, specialty-280, specialty-410, specialty-413, specialty-500, specialty-510, specialty-520, specialty-540, specialty-608, specialty-625, specialty-800, specialty_region-100, specialty_region-100, specialty_region-100, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, condo-700, geo-1, geo-1, geo-2, geo-2, geo-3, geo-3, geo-4, geo-4, geo-6, geo-6, geo-7, geo-7, geo-8, geo-8, geo-11, geo-11, geo-12, geo-12, geo-13, geo-13, geo-14, geo-14, geo-15, geo-15, geo-16, geo-16, geo-17, geo-17, geo-18, geo-18, geo-19, geo-19, geo-21, geo- [... truncated]
+  specialty rates parsed for areas: 100, 153, 160, 174, 250, 280, 410, 413, 500, 510, 520, 540, 608, 625, 800
+  year  found  parsed  unparsed  known_gap
+  2026     78      74         4          0
+  not parsed:
+    2026 015.pdf                      unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 101.pdf                      unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+    2026 commercial/015.pdf           unparsed  2 'Change in Total Assessed Value' sections, expected 8; value section at line 488 has no preceding area heading; value section at line 496 has no preceding area heading
+    2026 commercial/101.pdf           unparsed  no 'Specialty Area 101 -' / 'Spec 101' heading; no 'Specialty Area 102 -' / 'Spec 102' heading
+  💾 cached: area_report_actuals_2026.rds
+  💾 csv: area_report_actuals_2026.csv
+  Actual 2025→2026 AV growth (population basis):
+    com   43 cells | min -31.0% | median +0.5% | max +28.3%
+    condo 18 cells | min -6.5% | median -4.7% | max -2.4%
+    res   34 cells | min -5.8% | median -1.4% | max +2.0%
+area_report_import.R complete.
+  area_report_actuals available: 51 geographic areas | 16 specialty areas
+
+--- Steps 1-5b: Skipped (forecast_only=TRUE — loading cached extended panels) ---
+
+--- Step 3: Models ---
+
+  [Condo models]
+  Loading cached condo models ...
+STEP FAILED: No model file found for: lgb_condo_land_delta_cv
+Run with model_replicate=TRUE once to train models.
+  in: load_model("lgb_condo_land_delta_cv", "lgb_condo_land_delta_cv")
+== finished  2026-10-10 04:27:52  status= FAILED 
