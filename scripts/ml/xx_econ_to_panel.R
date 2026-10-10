@@ -11,8 +11,12 @@ econ_sheet <- switch(scenario_local,
 )
 message("  Reading OERF sheet: ", econ_sheet)
 
+# Fixed workbook, not chosen by modified time: every scenario reads a sheet
+# of this one file, so scenarios cannot mix vintages.  Update the name when
+# a new OERF forecast lands.
 econ_file <- here("data", "oerf",
                   "OERF_EcoForecast_KS_2026Q3_202607 2026-07-26.xlsx")
+message("  OERF workbook: ", basename(econ_file))
 
 econ_lvl_raw   <- read_xlsx(econ_file, sheet = econ_sheet, range = "A4:AR33")
 econ_delta_raw <- read_xlsx(econ_file, sheet = econ_sheet, range = "A37:AR64")

@@ -215,6 +215,15 @@ load_model("dv_land_delta",     "dv_land_delta")
 load_model("lgb_impr_delta_cv", "lgb_impr_delta_cv")
 load_model("dv_impr_delta",     "dv_impr_delta")
 
+# NWMLS feature mode: the boosters must have been trained in the run's mode
+# (nwmls_features, default "level"; unstamped pre-2026-10 models = "level").
+if (!exists("nwmls_assert_model_mode", mode = "function"))
+  source(here::here("scripts", "ml", "nwmls_features.R"))
+nwmls_assert_model_mode(
+  list(lgb_land_delta_cv = lgb_land_delta_cv,
+       lgb_impr_delta_cv = lgb_impr_delta_cv),
+  nwmls_run_mode(), where = "Step 6 (residential)")
+
 # Expose booster + feature aliases
 lgb_land_delta_model    <- lgb_land_delta_cv$model
 lgb_land_delta_features <- lgb_land_delta_cv$x_cols
@@ -303,6 +312,27 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
   fcst_years  <- hist_max_yr + seq_len(max(0L, .fcst_end - hist_max_yr))
   message("History max year: ", hist_max_yr,
           " | Forecasting: ", paste(fcst_years, collapse = ", "))
+
+  # ---- Forecast-year feature check --------------------------------------
+  # Every raw (non-dummy) feature the delta boosters split on must be present
+  # and not all-NA in each forecast year; otherwise impute_for_prediction()
+  # quietly gives the whole year the training median.  The lag columns are
+  # rebuilt inside the year loop, so they are not checked here.  growth
+  # mode: stop(); level mode: warning() (NWMLS_GROWTH_DECISION.md).
+  .used_feats <- function(cv, train_df) {
+    f <- intersect(cv$x_cols, names(train_df))
+    imp <- tryCatch(lgb.importance(cv$model)$Feature, error = function(e) NULL)
+    if (length(imp)) f <- intersect(f, imp)
+    f
+  }
+  nwmls_assert_forecast_features(
+    panel_all,
+    features = grep("^log_appr_(land|imps)_val_lag[0-9]+$",
+                    union(.used_feats(lgb_land_delta_cv, train_land_df),
+                          .used_feats(lgb_impr_delta_cv, train_impr_df)),
+                    value = TRUE, invert = TRUE),
+    years = fcst_years, mode = nwmls_run_mode(),
+    where = "Step 6 (residential)")
 
   # ---- Seed log-scale columns -------------------------------------------
   panel_all[, appr_land_val_filled := as.numeric(appr_land_val_filled)]

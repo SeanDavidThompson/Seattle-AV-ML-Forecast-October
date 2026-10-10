@@ -18,6 +18,19 @@ message("Running 03_model_land.R (LightGBM delta + level rolling CV) ...")
 cache_dir <- get0("cache_dir", envir = .GlobalEnv, ifnotfound = here("data", "cache"))
 model_dir <- get0("model_dir", envir = .GlobalEnv, ifnotfound = here("data", "model"))
 
+# NWMLS feature mode (run_main_ml(nwmls_features = ...), default "level").
+# nwmls_model_cols() says which sea_* columns each frame may contain; in
+# "level" mode that is exactly the six levels below, so the frames are
+# unchanged.  See scripts/ml/nwmls_features.R.
+if (!exists("nwmls_model_cols", mode = "function"))
+  source(here("scripts", "ml", "nwmls_features.R"))
+.nwmls_mode       <- nwmls_run_mode()
+.nwmls_delta_cols <- nwmls_model_cols(.nwmls_mode, "delta")
+.nwmls_level_cols <- nwmls_model_cols(.nwmls_mode, "level")
+.nwmls_all_cols   <- union(.nwmls_level_cols, .nwmls_delta_cols)
+message("  nwmls_features = \"", .nwmls_mode, "\" | delta frame NWMLS cols: ",
+        paste(.nwmls_delta_cols, collapse = ", "))
+
 .panel_path <- if (file.exists(file.path(cache_dir, "panel_tbl_res.rds")))
   file.path(cache_dir, "panel_tbl_res.rds") else if (
   file.exists(file.path(cache_dir, "panel_tbl_res_backbone.rds")))
@@ -64,6 +77,17 @@ for (.opt_num in c("dist_to_public_km", "dist_to_private_km",
     panel_tbl[[.opt_num]] <- NA_real_
   }
 }
+
+# In "growth" mode a panel cached before nwmls_features existed has no growth
+# columns.  main_ml.R joins them before Step 3; standalone, stop rather than
+# let the predictor filter drop them silently.
+.nwmls_absent <- setdiff(.nwmls_all_cols, names(panel_tbl))
+if (.nwmls_mode == "growth" && length(.nwmls_absent))
+  stop("nwmls_features = \"growth\" but the residential panel lacks: ",
+       paste(.nwmls_absent, collapse = ", "),
+       ".  Run through run_main_ml(nwmls_features = \"growth\"), which joins ",
+       "them (nwmls_ensure_panel_cols()).", call. = FALSE)
+rm(.nwmls_absent)
 
 # ------------------------------------------------------------------
 # 1) Build base frame with logs + lags + delta (NO drop_na yet)
@@ -131,12 +155,10 @@ model_data_land_base <- panel_tbl_train %>%
     log_appr_land_val_lag1,
     log_appr_land_val_lag2,
     delta_log_land,
-    sea_pmedesfh_lag12,
-    sea_pmedesfh_lag6,
-    sea_sesfh_lag6,
-    sea_sesfh_lag12,
-    sea_alesfh_lag6,
-    sea_alesfh_lag12,
+    # NWMLS: "level" mode = sea_pmedesfh_lag12, sea_pmedesfh_lag6,
+    # sea_sesfh_lag6, sea_sesfh_lag12, sea_alesfh_lag6, sea_alesfh_lag12
+    # (same columns, same order as before nwmls_features existed).
+    all_of(.nwmls_all_cols),
 #    sea_spesfh_lag6,
  #   sea_spesfh_lag12,
     
@@ -166,6 +188,17 @@ model_data_land_delta <- model_data_land_base %>%
 model_data_land_level <- model_data_land_base %>%
   drop_na(log_appr_land_val) %>% 
   select(-contains("_yoy"))
+
+# NWMLS columns this mode keeps out of each frame.  Empty in "level" mode.
+# "growth": the delta frame drops the six levels (they read as period labels
+# in a delta model); the level frame drops sea_mos_sfh_lag12 (the _yoy
+# columns are already gone via -contains("_yoy")).
+.nwmls_drop_delta <- setdiff(.nwmls_all_cols, .nwmls_delta_cols)
+.nwmls_drop_level <- setdiff(.nwmls_all_cols, .nwmls_level_cols)
+if (length(.nwmls_drop_delta))
+  model_data_land_delta <- model_data_land_delta %>% select(-any_of(.nwmls_drop_delta))
+if (length(.nwmls_drop_level))
+  model_data_land_level <- model_data_land_level %>% select(-any_of(.nwmls_drop_level))
 
 
 # ------------------------------------------------------------------
@@ -302,6 +335,11 @@ dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(cache_dir, recursive = TRUE, showWarnings = FALSE)
 
 stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")  # avoids overwriting
+
+# Record the NWMLS feature mode on the artifacts: Steps 4 and 6 refuse to run
+# a model trained in a different mode (nwmls_assert_model_mode()).
+lgb_land_delta_cv <- nwmls_stamp_mode(lgb_land_delta_cv, .nwmls_mode)
+lgb_land_level_cv <- nwmls_stamp_mode(lgb_land_level_cv, .nwmls_mode)
 
 # Save delta artifacts (required for 07_forecast... land delta branch)
 saveRDS(lgb_land_delta_cv,

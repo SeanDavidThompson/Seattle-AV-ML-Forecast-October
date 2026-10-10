@@ -183,6 +183,16 @@ if (!exists("dv_impr_level", envir = .GlobalEnv)) {
   }
 }
 
+# NWMLS feature mode: the residential boosters must have been trained in the
+# run's mode (nwmls_features, default "level"; unstamped = "level").
+if (!exists("nwmls_assert_model_mode", mode = "function"))
+  source(here::here("scripts", "ml", "nwmls_features.R"))
+nwmls_assert_model_mode(
+  c(list(lgb_land_cv = lgb_land_cv, lgb_impr_cv = lgb_impr_cv),
+    if (exists("lgb_impr_level_cv"))
+      list(lgb_impr_level_cv = lgb_impr_level_cv)),
+  nwmls_run_mode(), where = "Step 4 retrofit (residential)")
+
 # Expose booster + feature names
 if (!exists("lgb_land_model",         envir = .GlobalEnv)) lgb_land_model         <- lgb_land_cv$model
 if (!exists("lgb_impr_model",         envir = .GlobalEnv)) lgb_impr_model         <- lgb_impr_cv$model

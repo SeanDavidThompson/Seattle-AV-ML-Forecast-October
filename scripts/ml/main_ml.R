@@ -141,6 +141,17 @@ CFG <- list(
   # address, joins hlth_* features to the commercial panel.
   use_health_ratings = TRUE,
 
+  # ---- NWMLS residential features (see NWMLS_GROWTH_DECISION.md) ------------
+  #   "level"  (default) - the six 6/12-month trailing means of median SFH
+  #            price, closed sales and active listings go into the residential
+  #            delta AND level models.  Reproduces every run before 2026-10.
+  #   "growth" - residential DELTA models get year-over-year log growth of
+  #            those means (sea_*_lag{6,12}_yoy) plus months of supply
+  #            (sea_mos_sfh_lag12) instead of the levels; level models keep
+  #            the levels.  Needs models trained in "growth" mode: Steps 4 and
+  #            6 stop on a mode mismatch.  Condo / commercial are unaffected.
+  nwmls_features = "level",
+
   cache_dir  = here::here("data", "cache"),
   model_dir  = here::here("data", "model"),
   output_dir = here::here("data", "outputs")
@@ -270,6 +281,9 @@ COM_PU_EXCLUDE <- c(
 )
 
 COM_SUBGROUP_KEYS <- names(COM_SUBGROUPS)
+
+# NWMLS feature helpers: nwmls_model_cols(), mode guards, cache rebuild.
+source(here::here("scripts", "ml", "nwmls_features.R"))
 
 # =============================================================================
 # retro_fill_av()
@@ -426,6 +440,7 @@ run_main_ml <- function(replicate             = CFG$replicate,
                         use_construction_sales    = CFG$use_construction_sales,
                         use_home_improvement      = CFG$use_home_improvement,
                         use_health_ratings    = CFG$use_health_ratings,
+                        nwmls_features        = CFG$nwmls_features,
                         cache_dir             = CFG$cache_dir,
                         model_dir             = CFG$model_dir,
                         output_dir            = CFG$output_dir) {
@@ -542,6 +557,9 @@ run_main_ml <- function(replicate             = CFG$replicate,
   if (!is.logical(use_health_ratings) || length(use_health_ratings) != 1)
     stop("use_health_ratings must be TRUE or FALSE")
 
+  if (is.null(nwmls_features)) nwmls_features <- "level"
+  nwmls_features <- nwmls_check_mode(nwmls_features)
+
   run_res   <- prop_scope %in% c("res", "both", "all")
   run_com   <- prop_scope %in% c("com", "both", "all")
   run_condo <- prop_scope %in% c("condo", "all")
@@ -568,6 +586,7 @@ run_main_ml <- function(replicate             = CFG$replicate,
   message("use_area_actuals = ", use_area_actuals,
           if (use_area_actuals) paste0(" (reports year ", area_reports_year, ")") else "")
   message("use_health_ratings = ", use_health_ratings)
+  message("nwmls_features = ", nwmls_features)
   if (!is.null(train_through_year) || !isTRUE(locf_backfill) ||
       !is.null(stop_after))
     message("BACKTEST MODE: train_through_year = ",
@@ -603,6 +622,9 @@ run_main_ml <- function(replicate             = CFG$replicate,
   assign("cache_dir",               cache_dir,               envir = .GlobalEnv)
   assign("model_dir",               model_dir,               envir = .GlobalEnv)
   assign("output_dir",              output_dir,              envir = .GlobalEnv)
+  # Read by 03_model_*.R, 04, 05_eval and 06 via nwmls_run_mode().  Assigned
+  # on every call so a previous call's mode cannot leak into this one.
+  assign("nwmls_features",          nwmls_features,          envir = .GlobalEnv)
   set.seed(seed)
 
   source_global(here::here("scripts", "ml", "00_init.R"))
@@ -796,6 +818,52 @@ run_main_ml <- function(replicate             = CFG$replicate,
     }
     assign(obj_name, readRDS(p), envir = .GlobalEnv)
     message("  \u2705 loaded training frame: ", obj_name)
+  }
+
+  # ------------------------------------------------------------------
+  # ensure_res_panel_nwmls()
+  # ------------------------------------------------------------------
+  # nwmls_features = "growth" only.  panel_tbl_res.rds caches built before
+  # 2026-10 carry the six NWMLS levels but not the growth columns.  Rather
+  # than force panel_replicate = TRUE (hours, and it rebuilds everything
+  # else too), join the missing columns by tax_yr from the scenario's NWMLS
+  # export.  In memory only: the cached panel file is not rewritten.  The
+  # history rows (tax_yr <= forecast_start - 1) are observed months, the same
+  # in every scenario file.  Returns TRUE if it had to load panel_tbl_res.
+  ensure_res_panel_nwmls <- function() {
+    if (nwmls_features != "growth") return(invisible(FALSE))
+    loaded <- FALSE
+    if (!exists("panel_tbl_res", envir = .GlobalEnv)) {
+      cache_load("panel_tbl_res")
+      loaded <- TRUE
+    }
+    pr <- get("panel_tbl_res", envir = .GlobalEnv)
+    if (!length(setdiff(nwmls_required_cols(nwmls_features), names(pr))))
+      return(invisible(loaded))
+    message("  nwmls_features = \"growth\": residential panel lacks the growth ",
+            "columns - joining them from the NWMLS export ...")
+    ann <- nwmls_build_annual(
+      nwmls_read_raw(scenario, here::here("data", "nwmls"))[["data"]])[["annual"]]
+    # The joined growth columns must come from the same NWMLS history as the
+    # levels already in the panel.  A different export vintage (revised
+    # history) would make them inconsistent.
+    if ("sea_pmedesfh_lag12" %in% names(pr)) {
+      yv <- unique(data.table::data.table(
+        tax_yr = as.numeric(pr[["tax_yr"]]), v = pr[["sea_pmedesfh_lag12"]]))
+      yv <- yv[!is.na(v)]
+      ref <- ann[["sea_pmedesfh_lag12"]][match(yv[["tax_yr"]], ann[["tax_yr"]])]
+      dmax <- suppressWarnings(max(abs(yv[["v"]] / ref - 1), na.rm = TRUE))
+      if (is.finite(dmax) && dmax > 1e-6)
+        stop("nwmls_features = \"growth\": sea_pmedesfh_lag12 in the cached ",
+             "panel differs from the current NWMLS export by up to ",
+             signif(100 * dmax, 3), "% - the panel was built from a different ",
+             "export vintage.  Rebuild the panel (panel_replicate = TRUE) or ",
+             "put the matching export in data/nwmls/.", call. = FALSE)
+    }
+    assign("panel_tbl_res",
+           nwmls_ensure_panel_cols(pr, nwmls_features, ann),
+           envir = .GlobalEnv)
+    invisible(loaded)
   }
 
   expose_cv <- function(cv_name, model_name, feat_name) {
@@ -1829,6 +1897,7 @@ run_main_ml <- function(replicate             = CFG$replicate,
     message("\n  [Residential models]")
     if (model_replicate) {
       message("  Training residential LightGBM models ...")
+      .res_panel_loaded_for_nwmls <- ensure_res_panel_nwmls()
       cl <- init_parallel()
       on.exit({
         try(stopCluster(cl), silent = TRUE)
@@ -1845,6 +1914,10 @@ run_main_ml <- function(replicate             = CFG$replicate,
         "model_data_impr_delta_model",
         "model_data_impr_level_model"
       )
+      # forecast_only skips Step 4, so a panel loaded only for the growth
+      # join is not needed again.
+      if (isTRUE(.res_panel_loaded_for_nwmls) && forecast_only)
+        drop_if_exists("panel_tbl_res")
 
     } else {
       message("  Loading cached residential models ...")
@@ -2101,7 +2174,10 @@ run_main_ml <- function(replicate             = CFG$replicate,
     retro_cache_res <- file.path(cache_dir, "panel_tbl_retro_res.rds")
 
     if (retrofit_replicate || !file.exists(retro_cache_res)) {
-      assign("panel_tbl", panel_tbl_res, envir = .GlobalEnv)
+      # growth mode: the retrofit's delta models read the growth columns
+      ensure_res_panel_nwmls()
+      assign("panel_tbl", get("panel_tbl_res", envir = .GlobalEnv),
+             envir = .GlobalEnv)
       # Drop panel_tbl_res immediately — retrofit only needs panel_tbl.
       # Keeping both alive simultaneously adds ~2.5 GB at peak.
       drop_if_exists("panel_tbl_res")
@@ -2387,6 +2463,18 @@ run_main_ml <- function(replicate             = CFG$replicate,
 
     # Residential extend
     if (run_res) {
+      # growth mode: the extend joins every column of the NWMLS forecast
+      # cache onto the forecast years, so the cache must carry the growth
+      # columns.  A pre-2026-10 cache is rebuilt from data/nwmls/ (only that
+      # file is rewritten; its level columns are byte-identical).
+      if (nwmls_features == "growth")
+        nwmls_ensure_fcst_cache(
+          nwmls_fcst_cache_path(cache_dir, scenario), nwmls_features,
+          rebuild = function()
+            nwmls_write_fcst_cache(scenario, cache_dir = cache_dir,
+                                   nwmls_dir = here::here("data", "nwmls"),
+                                   forecast_start = forecast_start,
+                                   forecast_end = forecast_end))
       ext_cache_res <- file.path(cache_dir,
                                  paste0("panel_tbl_", forecast_start, "_", forecast_end, "_inputs_", scenario, "_res.rds"))
       if (extend_replicate || !file.exists(ext_cache_res)) {
@@ -3284,6 +3372,10 @@ av_fcst_summary <- function(
                                         prefix = "$")
   }
   print(print_tbl)
+  message("NOTE: this is NOT the certified series.  av_fcst_summary() sums the ",
+          "raw parcel-model forecasts (appraised basis, no personal property, ",
+          "no new construction, not calibrated to the preliminary roll).  The ",
+          "certified-basis series is scripts/av_reconcile_certified.R.")
 
   # ---- Export to CSV if requested ------------------------------------------
   if (export_csv) {

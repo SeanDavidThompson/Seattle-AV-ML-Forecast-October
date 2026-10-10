@@ -127,6 +127,15 @@ if (!exists("panel_tbl", envir = .GlobalEnv)) {
 .load_if_missing("lgb_impr_delta_cv", "lgb_impr_delta_cv")
 .load_if_missing("dv_impr_delta",     "dv_impr_delta")
 
+# NWMLS feature mode: the residential boosters must have been trained in the
+# run's mode (nwmls_features, default "level"; unstamped = "level").
+if (!exists("nwmls_assert_model_mode", mode = "function"))
+  source(here::here("scripts", "ml", "nwmls_features.R"))
+nwmls_assert_model_mode(
+  list(lgb_land_delta_cv = lgb_land_delta_cv,
+       lgb_impr_delta_cv = lgb_impr_delta_cv),
+  nwmls_run_mode(), where = "Step 5a eval (residential)")
+
 # Commercial models (optional — eval skipped if absent)
 .load_if_missing("lgb_com_land_delta_cv", "lgb_comm_land_delta_cv", required = FALSE)
 .load_if_missing("dv_com_land_delta",     "dv_comm_land_delta",     required = FALSE)

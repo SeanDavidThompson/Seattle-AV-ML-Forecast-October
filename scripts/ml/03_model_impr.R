@@ -64,14 +64,20 @@ base_impr_predictors <- c(
   "tax_yr", "log_appr_land_val"
 )
 
-nwmls_predictors <- c(
-  "sea_pmedesfh_lag12",
-  "sea_pmedesfh_lag6",
-  "sea_sesfh_lag6",
-  "sea_sesfh_lag12",
-  "sea_alesfh_lag6",
-  "sea_alesfh_lag12"
-)
+# NWMLS feature mode (run_main_ml(nwmls_features = ...), default "level").
+# "level" mode: exactly the six levels this list always held, in this order:
+#   sea_pmedesfh_lag12, sea_pmedesfh_lag6, sea_sesfh_lag6, sea_sesfh_lag12,
+#   sea_alesfh_lag6, sea_alesfh_lag12
+# "growth" mode adds the _yoy columns + sea_mos_sfh_lag12 for the delta frame;
+# the per-frame drops are below.  See scripts/ml/nwmls_features.R.
+if (!exists("nwmls_model_cols", mode = "function"))
+  source(here("scripts", "ml", "nwmls_features.R"))
+.nwmls_mode       <- nwmls_run_mode()
+.nwmls_delta_cols <- nwmls_model_cols(.nwmls_mode, "delta")
+.nwmls_level_cols <- nwmls_model_cols(.nwmls_mode, "level")
+nwmls_predictors  <- union(.nwmls_level_cols, .nwmls_delta_cols)
+message("  nwmls_features = \"", .nwmls_mode, "\" | delta frame NWMLS cols: ",
+        paste(.nwmls_delta_cols, collapse = ", "))
 
 econ_prod_delta <- c(
   "econ_employment_thous_yoy_lag1",
@@ -99,6 +105,17 @@ econ_prod_level <- c(
 # xx_kca_permits_to_panel.R; absent when use_kca_permits = FALSE.
 kcap_predictors <- get0("kcap_predictors", ifnotfound = character(0))
 kcap_predictors <- kcap_predictors[kcap_predictors %in% names(panel_tbl)]
+
+# In "growth" mode a panel cached before nwmls_features existed has no growth
+# columns.  main_ml.R joins them before Step 3; standalone, stop rather than
+# let the predictor filter drop them silently.
+.nwmls_absent <- setdiff(nwmls_predictors, names(panel_tbl))
+if (.nwmls_mode == "growth" && length(.nwmls_absent))
+  stop("nwmls_features = \"growth\" but the residential panel lacks: ",
+       paste(.nwmls_absent, collapse = ", "),
+       ".  Run through run_main_ml(nwmls_features = \"growth\"), which joins ",
+       "them (nwmls_ensure_panel_cols()).", call. = FALSE)
+rm(.nwmls_absent)
 
 permit_predictors <- permit_predictors[permit_predictors %in% names(panel_tbl)]
 impr_predictors   <- c(base_impr_predictors, permit_predictors, kcap_predictors,
@@ -178,6 +195,16 @@ model_data_impr_level <- model_data_impr_base %>%
   drop_na(log_appr_imps_val) %>%
   mutate(current_zoning_3 = fct_lump_min(current_zoning_3, min = 500)) %>% 
   select(-contains("_yoy"))
+
+# NWMLS columns this mode keeps out of each frame.  Empty in "level" mode.
+# "growth": the delta frame drops the six levels; the level frame drops
+# sea_mos_sfh_lag12 (the _yoy columns are already gone via -contains("_yoy")).
+.nwmls_drop_delta <- setdiff(nwmls_predictors, .nwmls_delta_cols)
+.nwmls_drop_level <- setdiff(nwmls_predictors, .nwmls_level_cols)
+if (length(.nwmls_drop_delta))
+  model_data_impr_delta <- model_data_impr_delta %>% select(-any_of(.nwmls_drop_delta))
+if (length(.nwmls_drop_level))
+  model_data_impr_level <- model_data_impr_level %>% select(-any_of(.nwmls_drop_level))
 
 # ------------------------------------------------------------------
 # 3) Feature cleaning helper (drop single-level factors + NZV) - reused
@@ -270,6 +297,10 @@ message(
 dir.create(model_dir, recursive = TRUE, showWarnings = FALSE)
 
 stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+
+# Record the NWMLS feature mode on the artifact: Steps 4 and 6 refuse to run
+# a model trained in a different mode (nwmls_assert_model_mode()).
+lgb_impr_cv <- nwmls_stamp_mode(lgb_impr_cv, .nwmls_mode)
 
 saveRDS(
   lgb_impr_cv,
@@ -402,6 +433,8 @@ rmse_comparison_impr_level <- data.frame(
 )
 print(rmse_comparison_impr_level)
 
+
+lgb_impr_level_cv <- nwmls_stamp_mode(lgb_impr_level_cv, .nwmls_mode)
 
 saveRDS(
   lgb_impr_level_cv,
