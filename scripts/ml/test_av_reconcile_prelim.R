@@ -17,7 +17,7 @@ script <- here::here("scripts", "av_reconcile_certified.R")
 rscript <- file.path(R.home("bin"), "Rscript")
 PT <- 294452027000; PN <- 1631730000
 
-make_root <- function(tag, total = NULL, nc = NULL, pp = NULL) {
+make_root <- function(tag, total = NULL, nc = NULL, pp = NULL, condo_rate = NULL) {
   root <- file.path(tempdir(), paste0("recon_", tag))
   unlink(root, recursive = TRUE)
   dir.create(file.path(root, "data", "cache"), recursive = TRUE)
@@ -34,6 +34,7 @@ make_root <- function(tag, total = NULL, nc = NULL, pp = NULL) {
   src <- setv(src, "PRELIM_TOTAL", total)
   src <- setv(src, "PRELIM_NC", nc)
   src <- setv(src, "PRELIM_PP", pp)
+  src <- setv(src, "CONDO_2027_RATE", condo_rate)
   writeLines(src, file.path(root, "scripts", "av_reconcile_certified.R"))
   # synthetic matched-parcel forecasts, distinct growth per track x scenario
   set.seed(2)
@@ -47,9 +48,21 @@ make_root <- function(tag, total = NULL, nc = NULL, pp = NULL) {
     d[, appr_imps_val := fifelse(tax_yr == 2026, base * .6, NA_real_)]
     d[, appr_land_val_filled := base * .4 * (1 + g[[tr]][[sc]])^(tax_yr - 2026)]
     d[, appr_imps_val_filled := base * .6 * (1 + g[[tr]][[sc]] + .002 * (tax_yr - 2026))^(tax_yr - 2026)]
+    if (tr == "condo")   # condo neighborhood: 10 / 20 / 30 / 77 (77 is in no report)
+      d[, nbhd := c(10L, 20L, 30L, 77L)[(as.integer(parcel_id) %% 4L) + 1L]]
     saveRDS(d, file.path(root, "data", "cache",
                          sprintf("panel_tbl_2006_2031_forecasted_%s_%s.rds", sc, tr)))
   }
+  # condo area reports: A covers 10,20 (-5%), B covers 30,99 (+2%); a sales
+  # row and a res row that must be ignored
+  saveRDS(data.frame(prop_type = c("condo", "condo", "condo", "res"),
+                     basis = c("population", "population", "sales", "population"),
+                     pct_change = c(-0.05, 0.02, -0.30, 0.10),
+                     nbhds = c("10,20", "30,99", "10,20", NA),
+                     report_id = c("residential/700_A", "residential/700_B",
+                                   "residential/700_A", "residential/010"),
+                     area_name = c("A", "B", "A", "Area 10"), stringsAsFactors = FALSE),
+          file.path(root, "data", "cache", "area_report_actuals_2026.rds"))
   write.csv(data.frame(tax_year = 2026:2031,
                        baseline    = c(4.51e9, 3.0e9, 3.2e9, 3.4e9, 3.5e9, 3.6e9),
                        optimistic  = c(4.51e9, 3.3e9, 3.5e9, 3.7e9, 3.8e9, 3.9e9),
@@ -138,5 +151,43 @@ stopifnot(!D$ok, any(grepl("needs BOTH PRELIM_TOTAL and PRELIM_NC", D$log)))
 E <- run(make_root("billions", total = 294.452, nc = PN))
 stopifnot(!E$ok, any(grepl("give dollars, not billions", E$log)))
 cat("PASS  validation: one of TOTAL/NC alone stops; a total in billions stops\n")
+
+# ---- 5. condo report rate (printed) and CONDO_2027_RATE ------------------------
+cb <- readRDS(file.path(tempdir(), "recon_null", "data", "cache",
+                        "panel_tbl_2006_2031_forecasted_baseline_condo.rds"))
+cb <- as.data.table(cb)[tax_yr == 2026]
+cb[, av := appr_land_val + appr_imps_val]
+w_a <- cb[nbhd %in% c(10L, 20L), sum(av)]; w_b <- cb[nbhd == 30L, sum(av)]
+hand <- (-0.05 * w_a + 0.02 * w_b) / (w_a + w_b)
+ln <- grep("VALUE-WEIGHTED SEATTLE CONDO REPORT RATE", A$log, value = TRUE)
+stopifnot(length(ln) == 1L,
+          abs(as.numeric(sub(".*CONDO_2027_RATE <- (-?[0-9.]+)\\).*", "\\1", ln)) - hand) < 1e-6,
+          any(grepl("neighborhood source: nbhd \\| matched 150 of 200 units", A$log)))
+cat(sprintf("PASS  condo report rate: printed %s = hand-computed %+.4f%% (Seattle-AV weighted, sales/res rows ignored)\n",
+            sub(".*RATE: ([^ ]+).*", "\\1", ln), 100 * hand))
+
+R5 <- run(make_root("condo_rate", condo_rate = -0.0512))
+stopifnot(R5$ok)
+for (sc in sc3) {
+  g27 <- val(R5$by_type, "condo", 2027, sc) / val(R5$by_type, "condo", 2026, sc) - 1
+  stopifnot(abs(g27 - (-0.0512)) < 1e-12,
+            all(abs(R5$by_type[track %in% c("res", "com", "pp")][order(track, tax_yr)][[sc]] -
+                    A$by_type[track %in% c("res", "com", "pp")][order(track, tax_yr)][[sc]]) < 1))
+  a <- A$by_type[track == "condo"][order(tax_yr)][[sc]]; b <- R5$by_type[track == "condo"][order(tax_yr)][[sc]]
+  stopifnot(all(abs(diff(log(a))[6:9] - diff(log(b))[6:9]) < 1e-12))     # 2028-31 = ML
+}
+R6 <- run(make_root("condo_rate_cal", total = PT, nc = PN, condo_rate = -0.0512))
+stopifnot(R6$ok)
+for (sc in sc3) {
+  k_res   <- val(R6$by_type, "res", 2027, sc) / val(R5$by_type, "res", 2027, sc)
+  k_condo <- val(R6$by_type, "condo", 2027, sc) / val(R5$by_type, "condo", 2027, sc)
+  stopifnot(abs(k_res - k_condo) < 1e-12,                                 # override, then one scale
+            abs(val(R6$by_type, "Total", 2027, sc) - PT) < 1)
+}
+stopifnot(any(grepl("ML [-+0-9.]+% -> CONDO_2027_RATE -5.1200%", R5$log)))
+F <- run(make_root("condo_bad", condo_rate = -5.12))
+stopifnot(!F$ok, any(grepl("CONDO_2027_RATE must be NULL or one growth rate", F$log)))
+cat("PASS  CONDO_2027_RATE: condo 2027 growth = override in every scenario, other tracks and\n",
+    "      2028-2031 unchanged; calibration then scales condo with res/com; bad value stops\n", sep = "")
 
 cat("\nAll av_reconcile prelim checks passed.\n")

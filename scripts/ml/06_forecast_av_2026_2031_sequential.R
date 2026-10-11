@@ -316,8 +316,11 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
   # ---- Forecast-year feature check --------------------------------------
   # Every raw (non-dummy) feature the delta boosters split on must be present
   # and not all-NA in each forecast year; otherwise impute_for_prediction()
-  # quietly gives the whole year the training median.  The lag columns are
-  # rebuilt inside the year loop, so they are not checked here.  growth
+  # quietly gives the whole year the training median.  Columns the year loop
+  # fills itself are not checked here: the lag columns, and
+  # log_appr_land_val (current-year land, an improvement predictor), which is
+  # set from log_land_filled after the land block.  The improvement block
+  # re-checks its own features in-loop, after they are filled.  growth
   # mode: stop(); level mode: warning() (NWMLS_GROWTH_DECISION.md).
   .used_feats <- function(cv, train_df) {
     f <- intersect(cv$x_cols, names(train_df))
@@ -327,12 +330,13 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
   }
   nwmls_assert_forecast_features(
     panel_all,
-    features = grep("^log_appr_(land|imps)_val_lag[0-9]+$",
+    features = grep("^log_appr_(land|imps)_val_lag[0-9]+$|^log_appr_land_val$",
                     union(.used_feats(lgb_land_delta_cv, train_land_df),
                           .used_feats(lgb_impr_delta_cv, train_impr_df)),
                     value = TRUE, invert = TRUE),
     years = fcst_years, mode = nwmls_run_mode(),
     where = "Step 6 (residential)")
+  .impr_used_feats <- .used_feats(lgb_impr_delta_cv, train_impr_df)
 
   # ---- Seed log-scale columns -------------------------------------------
   panel_all[, appr_land_val_filled := as.numeric(appr_land_val_filled)]
@@ -479,6 +483,13 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
       message("  land: no eligible rows (lag missing or already filled)")
     }
 
+    # Current-year land is an improvement predictor (03_model_impr.R puts
+    # log_appr_land_val in base_impr_predictors).  The extend step leaves it
+    # NA in forecast years; without this line impute_for_prediction() gave
+    # every parcel the training median.  Fill it from this year's land
+    # (anchored or predicted) before the improvement block.
+    panel_all[idx_yr, log_appr_land_val := log_land_filled]
+
     # ------------------------------------------------------------------
     # IMPROVEMENTS delta
     # ------------------------------------------------------------------
@@ -492,6 +503,18 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
       dv_vars <- setdiff(all.vars(dv_impr_delta$terms),
                          all.vars(dv_impr_delta$form)[1])
       panel_all <- align_to_train(panel_all, train_impr_df, union(pc, dv_vars))
+
+      # Every feature the improvement booster uses must have data in this
+      # year's rows by now; an all-NA one would be median-imputed for every
+      # parcel.  Both modes stop.
+      .na_feats <- .impr_used_feats[vapply(.impr_used_feats, function(f)
+        !f %in% names(panel_all) || all(is.na(panel_all[[f]][rows_impr])),
+        logical(1))]
+      if (length(.na_feats))
+        stop("Step 6 (residential) tax_yr ", yr, ": improvement booster ",
+             "feature(s) missing or all-NA in the rows to predict: ",
+             paste(.na_feats, collapse = ", "),
+             " - they would be median-imputed for every parcel.", call. = FALSE)
 
       nd <- impute_for_prediction(
         as.data.frame(panel_all[rows_impr, ..pc]),
