@@ -196,6 +196,112 @@ condo_gyy_pes <- load_matched_gyy("condo", "pessimistic")
 message("  Condo baseline growth rates:")
 if (!is.null(condo_gyy_bas)) print(condo_gyy_bas)
 
+# --- Condo: value-weighted KCA condo report rate (reference) ---------------
+# The Assessor's condo area reports (area_report_actuals_<A>.rds, A = 2026 for
+# the TY2027 roll) give a population % change per report, each covering a
+# list of condo neighborhoods county-wide.  Weighted to Seattle: each report's
+# rate x the TY2026 AV of the Seattle units in its neighborhoods, over the
+# matched AV.  Printed as a reference for CONDO_2027_RATE below; never used
+# unless you set it.
+condo_report_weighted_rate <- function(cache_dir, assessment_yr = 2026L) {
+  ap <- file.path(cache_dir, paste0("area_report_actuals_", assessment_yr, ".rds"))
+  cp <- file.path(cache_dir, "panel_tbl_2006_2031_forecasted_baseline_condo.rds")
+  if (!file.exists(ap)) stop(basename(ap), " not in ", cache_dir)
+  if (!file.exists(cp)) stop(basename(cp), " not in ", cache_dir)
+  nkey <- function(x) {
+    x <- trimws(as.character(x)); x[x %in% c("", "NA", "0")] <- NA_character_
+    n <- suppressWarnings(as.numeric(x)); ifelse(is.na(n), x, as.character(n))
+  }
+  act <- as.data.table(readRDS(ap))
+  act <- act[prop_type == "condo" & basis == "population" &
+               is.finite(pct_change) & !is.na(nbhds) & nbhds != ""]
+  if (!nrow(act)) stop("no condo population rows in ", basename(ap))
+  act[, report := if ("report_id" %in% names(act)) report_id else source_file]
+  nb <- act[, .(nbhd = nkey(unlist(strsplit(nbhds, ",", fixed = TRUE)))),
+            by = .(report, area_name, pct_change)]
+  nb <- unique(nb, by = "nbhd")          # a neighborhood belongs to one report
+
+  # Seattle units, TY2026 AV (same definition as load_matched_gyy)
+  d <- as.data.table(readRDS(cp))[tax_yr == assessment_yr]
+  vc <- intersect(c("appr_land_val", "appr_land_val_filled", "pred_appr_land_val"), names(d))
+  ic <- intersect(c("appr_imps_val", "appr_imps_val_filled", "pred_appr_imps_val"), names(d))
+  d[, av := rowSums(cbind(
+    do.call(fcoalesce, lapply(vc, function(cn) as.numeric(d[[cn]]))),
+    do.call(fcoalesce, lapply(ic, function(cn) as.numeric(d[[cn]])))), na.rm = TRUE)]
+  d <- unique(d[av > 0], by = "parcel_id")
+
+  # Neighborhood: the panel column (or EXTR_Parcel SpecSubArea for condo
+  # complexes, joined on Major) that matches the most report neighborhoods.
+  cands <- grep("nbhd|neighbo|sub_?area|spec_?sub|condo.*(area|nbhd)", names(d),
+                value = TRUE, ignore.case = TRUE, perl = TRUE)
+  opts <- lapply(setNames(cands, cands), function(cn) nkey(d[[cn]]))
+  kca <- sort(list.files(here("data", "kca"), pattern = "^EXTR_Parcel\\.csv$",
+                         recursive = TRUE, full.names = TRUE), decreasing = TRUE)
+  if (length(kca)) {
+    xp <- fread(kca[1], select = c("Major", "SpecArea", "SpecSubArea"),
+                colClasses = "character", showProgress = FALSE)
+    xp <- xp[nkey(SpecArea) == "700",
+             .(nbhd = nkey(SpecSubArea)[1]), by = .(Major = sprintf("%06d", as.integer(Major)))]
+    maj <- substr(sprintf("%010s", gsub("-", "", d[["parcel_id"]])), 1, 6)
+    maj <- gsub(" ", "0", maj)
+    opts[[paste0("EXTR_Parcel SpecSubArea (", basename(dirname(kca[1])), ")")]] <-
+      xp[["nbhd"]][match(maj, xp[["Major"]])]
+  }
+  if (!length(opts)) stop("no condo neighborhood column in the panel and no EXTR_Parcel.csv")
+  score <- vapply(opts, function(v) sum(d[["av"]][v %in% nb[["nbhd"]]]), numeric(1))
+  best <- names(which.max(score))
+  if (max(score) <= 0) stop("no condo unit matches a report neighborhood")
+  d[, nbhd := opts[[best]]]
+  m <- merge(d[, .(nbhd, av)], nb, by = "nbhd")
+  tab <- m[, .(seattle_units = .N, seattle_av_2026 = sum(av)),
+           by = .(report, area_name, pct_change)][order(-seattle_av_2026)]
+  rate <- tab[, sum(pct_change * seattle_av_2026) / sum(seattle_av_2026)]
+  list(rate = rate, table = tab, source = best,
+       matched_av = sum(m[["av"]]), total_av = sum(d[["av"]]),
+       matched_units = nrow(m), total_units = nrow(d))
+}
+
+cw <- tryCatch(condo_report_weighted_rate(cache_dir), error = function(e) e)
+if (inherits(cw, "error")) {
+  message("  (condo report rate not computed: ", conditionMessage(cw), ")")
+} else {
+  message("\n=== KCA condo area reports (assessment 2026 -> TY2027), weighted by ",
+          "Seattle units' TY2026 AV ===")
+  message("  neighborhood source: ", cw[["source"]], " | matched ",
+          format(cw[["matched_units"]], big.mark = ","), " of ",
+          format(cw[["total_units"]], big.mark = ","), " units, ",
+          sprintf("%.1f%%", 100 * cw[["matched_av"]] / cw[["total_av"]]), " of AV")
+  print(cw[["table"]][, .(report, area_name, pct_change = sprintf("%+.2f%%", 100 * pct_change),
+                         seattle_units, seattle_av_2026_B = round(seattle_av_2026 / 1e9, 3))],
+        row.names = FALSE)
+  message(sprintf("  VALUE-WEIGHTED SEATTLE CONDO REPORT RATE: %+.4f%%  (CONDO_2027_RATE <- %.6f)",
+                  100 * cw[["rate"]], cw[["rate"]]))
+}
+
+# --- Condo: optional 2027 growth override ----------------------------------
+# NULL (default): condo 2027 growth = the matched-parcel ML rate above.
+# Set (a fraction, e.g. -0.0512): replaces condo's 2027 growth in all three
+# scenarios BEFORE the preliminary-roll calibration, which then scales condo
+# with the other real-property tracks.  2028-2031 keep the ML rates.
+CONDO_2027_RATE <- NULL
+
+if (!is.null(CONDO_2027_RATE)) {
+  if (!is.numeric(CONDO_2027_RATE) || length(CONDO_2027_RATE) != 1L ||
+      !is.finite(CONDO_2027_RATE) || abs(CONDO_2027_RATE) > 0.5)
+    stop("CONDO_2027_RATE must be NULL or one growth rate as a fraction ",
+         "(e.g. -0.0512), |rate| <= 0.5")
+  ovr <- function(g, sc) {
+    if (is.null(g) || !nrow(g[tax_yr == 2027L]))
+      stop("CONDO_2027_RATE: no condo 2027 growth row for ", sc, " to override")
+    message(sprintf("  condo 2027 growth (%s): ML %+.4f%% -> CONDO_2027_RATE %+.4f%%",
+                    sc, 100 * g[tax_yr == 2027L, gyy], 100 * CONDO_2027_RATE))
+    g <- copy(g); g[tax_yr == 2027L, gyy := CONDO_2027_RATE]; g
+  }
+  condo_gyy_bas <- ovr(condo_gyy_bas, "baseline")
+  condo_gyy_opt <- ovr(condo_gyy_opt, "optimistic")
+  condo_gyy_pes <- ovr(condo_gyy_pes, "pessimistic")
+}
+
 # --- Commercial: matched-parcel from the COMBINED per-subgroup ML
 #     forecast (panel_tbl_2006_2031_forecasted_<sc>_com.rds — the
 #     rbind of apt/office/industrial/retail/hospitality/medical +
