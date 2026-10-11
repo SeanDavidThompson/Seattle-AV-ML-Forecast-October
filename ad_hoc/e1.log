@@ -1,5 +1,5 @@
 == step e1: sensitivity, level models
-== started  2026-10-10 03:19:01 
+== started  2026-10-10 18:32:57 
 
 Models (level mode):
   lgb_land_delta_cv_20261010_011253.rds
@@ -58,8 +58,6 @@ Area-report anchors: area_report_actuals_2026.rds (as in production)
 SCENARIO: BASELINE
 ============================================================
 History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
-Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
-  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
 
 --- tax_yr = 2027 ---
   rows=166330 | land_NA=166330 | impr_NA=166330
@@ -130,8 +128,6 @@ Warning: Step 6 (residential): forecast-year features the residential delta boos
 SCENARIO: BASELINE
 ============================================================
 History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
-Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
-  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
 
 --- tax_yr = 2027 ---
   rows=166330 | land_NA=166330 | impr_NA=166330
@@ -201,8 +197,6 @@ Warning: Step 6 (residential): forecast-year features the residential delta boos
 SCENARIO: BASELINE
 ============================================================
 History max year: 2026 | Forecasting: 2027, 2028, 2029, 2030, 2031
-Warning: Step 6 (residential): forecast-year features the residential delta boosters use are ALL-NA in: log_appr_land_val (2027), log_appr_land_val (2028), log_appr_land_val (2029), log_appr_land_val (2030), log_appr_land_val (2031).
-  Step 6 would median-impute them.  If these are NWMLS columns, the extended panel predates this nwmls_features mode: re-run with forecast_only = FALSE, extend_replicate = TRUE.
 
 --- tax_yr = 2027 ---
   rows=166330 | land_NA=166330 | impr_NA=166330
@@ -270,20 +264,20 @@ Key: <tax_yr>
     <int>     <num>   <num>    <num>         <char>        <char>   <char>
 1:   2026    168.69  168.69   168.69        +0.000%       +0.000%    4.46%
 2:   2027    167.27  167.27   167.27        +0.000%       +0.000%   -0.85%
-3:   2028    174.52  174.93   174.72        -0.235%       -0.119%    4.34%
-4:   2029    181.52  182.34   181.93        -0.450%       -0.226%    4.01%
-5:   2030    189.69  190.66   190.26        -0.511%       -0.211%    4.50%
-6:   2031    198.43  199.45   199.06        -0.510%       -0.193%    4.61%
+3:   2028    174.47  174.88   174.68        -0.235%       -0.114%    4.30%
+4:   2029    181.20  182.02   181.67        -0.449%       -0.191%    3.86%
+5:   2030    189.31  190.28   189.96        -0.513%       -0.172%    4.48%
+6:   2031    198.00  199.03   198.72        -0.516%       -0.152%    4.59%
    g_base g_plus5
    <char>  <char>
 1:  4.46%   4.46%
 2: -0.85%  -0.85%
-3:  4.58%   4.46%
-4:  4.24%   4.13%
-5:  4.56%   4.58%
-6:  4.61%   4.63%
+3:  4.55%   4.43%
+4:  4.08%   4.00%
+5:  4.54%   4.56%
+6:  4.59%   4.62%
 
 FAIL  [level]  total AV ordered -5% < base < +5% in every year 2028-2031 -- fails in 2028, 2029, 2030, 2031
 CSV: Z:/AV ML Model Oct/output/exhibits/nwmls_sensitivity_level.csv
-Elapsed: 25.1 min
-== finished  2026-10-10 03:44:10  status= ok 
+Elapsed: 23.6 min
+== finished  2026-10-10 18:56:32  status= ok 

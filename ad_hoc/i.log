@@ -1,6 +1,6 @@
 == step i: AB_SUMMARY.txt
-== started  2026-10-10 04:27:54 
-NWMLS level vs growth A/B summary - written 2026-10-10 04:27:55
+== started  2026-10-10 20:31:17 
+NWMLS level vs growth A/B summary - written 2026-10-10 20:31:18
 ========================================================================
 
 STEP STATUS
@@ -24,27 +24,27 @@ STEP STATUS
    h_com_pessimistic             com pessimistic (existing models)
  h_condo_pessimistic           condo pessimistic (existing models)
                    i                                AB_SUMMARY.txt
-            status elapsed_min             started
-                ok         0.1 2026-10-10 02:03:23
-                ok        18.8 2026-10-10 02:03:29
-                ok         2.1 2026-10-10 02:22:20
-                ok         0.3 2026-10-10 02:24:25
-            FAILED        54.3 2026-10-10 02:24:44
-                ok        25.2 2026-10-10 03:19:00
- skipped (needs d)          NA                <NA>
- skipped (needs d)          NA                <NA>
- skipped (needs d)          NA                <NA>
-                ok        18.0 2026-10-10 03:44:12
-                ok        18.6 2026-10-10 04:02:10
-            FAILED         1.2 2026-10-10 04:20:43
-            FAILED         1.1 2026-10-10 04:21:58
-            FAILED         1.1 2026-10-10 04:23:07
-            FAILED         1.1 2026-10-10 04:24:16
-            FAILED         1.2 2026-10-10 04:25:24
-            FAILED         1.3 2026-10-10 04:26:33
-           running          NA 2026-10-10 04:27:52
+              status elapsed_min             started
+     earlier run: ok         0.1 2026-10-10 02:03:23
+                  ok        16.3 2026-10-10 17:23:47
+     earlier run: ok         2.1 2026-10-10 02:22:20
+     earlier run: ok         0.3 2026-10-10 02:24:25
+                  ok        52.8 2026-10-10 17:40:08
+                  ok        23.6 2026-10-10 18:32:56
+                  ok        25.8 2026-10-10 18:56:33
+                  ok        19.6 2026-10-10 19:22:23
+                  ok        16.9 2026-10-10 19:41:58
+                  ok        16.1 2026-10-10 19:58:55
+                  ok        16.2 2026-10-10 20:15:03
+ earlier run: FAILED         1.2 2026-10-10 04:20:43
+ earlier run: FAILED         1.1 2026-10-10 04:21:58
+ earlier run: FAILED         1.1 2026-10-10 04:23:07
+ earlier run: FAILED         1.1 2026-10-10 04:24:16
+ earlier run: FAILED         1.2 2026-10-10 04:25:24
+ earlier run: FAILED         1.3 2026-10-10 04:26:33
+             running          NA 2026-10-10 20:31:12
 
-Total elapsed: 2.41 h
+Total elapsed: 3.28 h
 NWMLS FILE READ BY EACH RUN
 ------------------------------------------------------------------------
 Vintage resolved for each scenario (s0):
@@ -77,8 +77,11 @@ data/cache NWMLS forecast cache, 12-month mean price, before vs after s0:
   a                      no NWMLS read (used the cached NWMLS forecast / not applicable)
   b                      no NWMLS read (used the cached NWMLS forecast / not applicable)
   c                      no NWMLS read (used the cached NWMLS forecast / not applicable)
-  d                      Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds
+  d                      no NWMLS read (used the cached NWMLS forecast / not applicable)
   e1                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+  e2                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+  f1                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_optimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_optimistic.rds
+  f2                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_pessimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_pessimistic.rds
   g1                     no NWMLS read (used the cached NWMLS forecast / not applicable)
   g2                     no NWMLS read (used the cached NWMLS forecast / not applicable)
   h_com_baseline         no NWMLS read (used the cached NWMLS forecast / not applicable)
@@ -96,8 +99,8 @@ CV (rolling-CV RMSE, newest residential delta models)
  lgb_land_delta_cv lgb_land_delta_cv_20261010_011253.rds      level 0.1328136
  lgb_impr_delta_cv lgb_impr_delta_cv_20261010_012350.rds      level 0.4135928
                            growth_file growth_mode growth_cv pct_change
- lgb_land_delta_cv_20261010_024648.rds      growth 0.1310346      -1.34
- lgb_impr_delta_cv_20261010_025916.rds      growth 0.4158941       0.56
+ lgb_land_delta_cv_20261010_175642.rds      growth 0.1310373      -1.34
+ lgb_impr_delta_cv_20261010_180632.rds      growth 0.4158941       0.56
 
 SENSITIVITY (NWMLS price x0.95 / x1.05 in forecast months)
 ------------------------------------------------------------------------
@@ -105,19 +108,34 @@ SENSITIVITY (NWMLS price x0.95 / x1.05 in forecast months)
  tax_yr total_av_minus5 total_av_base total_av_plus5 pct_minus5_vs_base
    2026         168.694       168.694        168.694              0.000
    2027         167.269       167.269        167.269              0.000
-   2028         174.520       174.932        174.724             -0.235
-   2029         181.523       182.344        181.932             -0.450
-   2030         189.686       190.661        190.259             -0.511
-   2031         198.428       199.445        199.060             -0.510
+   2028         174.468       174.879        174.680             -0.235
+   2029         181.198       182.016        181.668             -0.449
+   2030         189.308       190.284        189.957             -0.513
+   2031         198.001       199.028        198.725             -0.516
  pct_plus5_vs_base
              0.000
              0.000
-            -0.119
-            -0.226
-            -0.211
-            -0.193
+            -0.114
+            -0.191
+            -0.172
+            -0.152
 
-  growth : n/a (step did not finish)
+  growth : FAIL
+ tax_yr total_av_minus5 total_av_base total_av_plus5 pct_minus5_vs_base
+   2026         168.694       168.694        168.694                  0
+   2027         167.269       167.269        167.269                  0
+   2028         169.909       169.909        169.909                  0
+   2029         174.830       174.830        174.830                  0
+   2030         177.965       177.965        177.965                  0
+   2031         184.246       184.246        184.246                  0
+ pct_plus5_vs_base
+                 0
+                 0
+                 0
+                 0
+                 0
+                 0
+
 
 RESIDENTIAL TOTAL AV BY MODE ($B; pessimistic <= baseline in 2028-2031?)
 ------------------------------------------------------------------------
@@ -127,13 +145,22 @@ Key: <tax_yr>
   <num>    <num>      <num>       <num>      <lgcl>
    2026  168.694    168.694     168.694        TRUE
    2027  167.269    167.269     167.269        TRUE
-   2028  174.932    173.777     165.703        TRUE
-   2029  182.344    181.206     172.641        TRUE
-   2030  190.661    190.004     179.699        TRUE
-   2031  199.445    199.296     187.690        TRUE
+   2028  174.879    173.530     162.781        TRUE
+   2029  182.016    180.760     169.459        TRUE
+   2030  190.284    189.515     176.309        TRUE
+   2031  199.028    198.720     184.138        TRUE
 
   growth:
-    n/a
+Key: <tax_yr>
+ tax_yr baseline optimistic pessimistic pes_le_base
+  <num>    <num>      <num>       <num>      <lgcl>
+   2026  168.694    168.694     168.694        TRUE
+   2027  167.269    167.269     167.269        TRUE
+   2028  169.909    168.799     162.219        TRUE
+   2029  174.830    173.747     167.237        TRUE
+   2030  177.965    180.021     172.449        TRUE
+   2031  184.246    189.569     178.455        TRUE
+
 TY2027 ANCHORING COUNTS (residential)
 ------------------------------------------------------------------------
   level:
@@ -144,18 +171,23 @@ TY2027 ANCHORING COUNTS (residential)
       166330      160530          0          0 pessimistic
 
   growth:
-    n/a
+ land_actual impr_actual land_delta impr_delta    scenario
+       <int>       <int>      <int>      <int>      <char>
+      166330      160530          0          0    baseline
+      166330      160530          0          0  optimistic
+      166330      160530          0          0 pessimistic
+
 DECISION RULE (NWMLS_GROWTH_DECISION.md)
 ------------------------------------------------------------------------
-  1. Sensitivity (growth passes; level shown)   : n/a   [level: FAIL]
-  2. Scenarios (growth pes <= base, 2028-2031)  : n/a   [level: PASS]
+  1. Sensitivity (growth passes; level shown)   : FAIL   [level: FAIL]
+  2. Scenarios (growth pes <= base, 2028-2031)  : PASS   [level: PASS]
   3. CV (growth <= level + 3%, land and impr)   : PASS   [lgb_land_delta_cv -1.34%, lgb_impr_delta_cv 0.56%]
-  4. Clean run                                   : n/a
-       growth steps d/f1/f2 all ok: FAIL | NA counts = level: n/a | TY2027 anchoring = level: n/a | new warning lines: 1
+  4. Clean run                                   : FAIL
+       growth steps d/f1/f2 all ok: PASS | NA counts = level: PASS | TY2027 anchoring = level: PASS | new warning lines: 1
        warnings in growth logs not seen in level logs:
          Warning in FUN(X[[i]], ...) : NAs introduced by coercion
 
-  RULE: INCOMPLETE - some evidence missing; ship level unless resolved
+  RULE: NOT MET - ship level
 
 Optimistic vs baseline is not judged (optimistic NWMLS price input is below baseline).
-== finished  2026-10-10 04:30:22  status= ok 
+== finished  2026-10-10 20:35:27  status= ok 
