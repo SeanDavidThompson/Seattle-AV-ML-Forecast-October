@@ -225,4 +225,120 @@ if (dir.exists(here::here("data", "nwmls"))) {
   }
 }
 
+# ---- 7. growth shock: forecast months only, factor (1+g)^(k/12), reaches every year ----
+mons <- seq(as.Date("2005-01-01"), as.Date("2031-12-01"), by = "month")
+lo2  <- as.Date("2026-06-01")
+j <- seq_along(mons)
+raw2 <- tibble::tibble(
+  date             = mons,
+  sea_pmedesfh_fav = 400000 * 1.004^(j - 1) + 8000 * sin(j / 2),
+  sea_sesfh_fav    = 500 + 100 * cos(j / 2),
+  sea_alesfh_fav   = 1200 + 300 * sin(j / 3),
+  sea_pmedesfh     = ifelse(mons <= lo2, 400000 * 1.004^(j - 1) + 8000 * sin(j / 2), NA_real_))
+gs <- nwmls_shock_price_growth(raw2, -0.05, lo2)
+k  <- (as.integer(format(mons, "%Y")) - 2026L) * 12L + as.integer(format(mons, "%m")) - 6L
+fac <- gs[["sea_pmedesfh_fav"]] / raw2[["sea_pmedesfh_fav"]]
+stopifnot(all(abs(fac[mons <= lo2] - 1) < 1e-15),
+          all(abs(fac[mons > lo2] - 0.95^(k[mons > lo2] / 12)) < 1e-12),
+          abs(fac[mons == as.Date("2027-06-01")] - 0.95) < 1e-12,
+          identical(gs[["sea_sesfh_fav"]], raw2[["sea_sesfh_fav"]]),
+          identical(gs[["sea_pmedesfh"]][mons <= lo2], raw2[["sea_pmedesfh"]][mons <= lo2]))
+yrs_moved <- function(shocked, col) {
+  b <- suppressMessages(nwmls_build_annual(raw2))[["annual"]]
+  a <- suppressMessages(nwmls_build_annual(shocked))[["annual"]]
+  yy <- 2027:2031
+  yy[abs(a[[col]][match(yy, a[["tax_yr"]])] - b[[col]][match(yy, b[["tax_yr"]])]) > 1e-12]
+}
+lv <- nwmls_shock_price(raw2, 0.95, lo2)
+stopifnot(identical(yrs_moved(gs, "sea_pmedesfh_lag12_yoy"), 2027:2031),
+          identical(yrs_moved(gs, "sea_pmedesfh_lag6_yoy"),  2027:2031),
+          identical(yrs_moved(lv, "sea_pmedesfh_lag12_yoy"), 2027:2028),
+          identical(yrs_moved(lv, "sea_pmedesfh_lag6_yoy"),  2027L),
+          identical(yrs_moved(lv, "sea_pmedesfh_lag12"),     2027:2031))
+cat("PASS  growth shock: forecast months only, factor = (1+g)^(k/12); moves both _yoy features in\n",
+    "      every year 2027-2031, while the level shock moves lag12_yoy only in 2027-2028 and\n",
+    "      lag6_yoy only in 2027 (why the original test could not see the growth models)\n", sep = "")
+
+# ---- 8. sensitivity: "level" stays the default and the old code path ---------------
+NWMLS_SENS_DEFINE_ONLY <- TRUE
+source(here::here("ad_hoc", "nwmls_sensitivity.R"))
+fm <- formals(run_nwmls_sensitivity)
+stopifnot(identical(eval(fm[["shock_type"]])[1], "level"), is.null(fm[["shocks"]]))
+body_txt <- paste(readLines(here::here("ad_hoc", "nwmls_sensitivity.R")), collapse = "\n")
+stopifnot(grepl("c(minus5 = 0.95, base = 1.00, plus5 = 1.05)", body_txt, fixed = TRUE),
+          grepl("nwmls_shock_price(raw[[\"data\"]], fac, last_obs)", body_txt, fixed = TRUE),
+          grepl("nwmls_sensitivity_\", mode, \"_\", shock_type, \".csv", body_txt, fixed = TRUE))
+cat("PASS  sensitivity: shock_type defaults to \"level\" with the original 0.95/1/1.05 shock through\n",
+    "      nwmls_shock_price(); CSV goes to nwmls_sensitivity_<mode>_<shock_type>.csv\n", sep = "")
+
+# ---- 9. promotion: backup, swap, refusals, restore --------------------------------
+PROMOTE_DEFINE_ONLY <- TRUE
+source(here::here("ad_hoc", "promote_growth_res.R"))
+proot <- file.path(tempdir(), "promote_test")
+mk_fc <- function(level_av, mode) {
+  d <- data.table(parcel_id = rep(sprintf("%03d", 1:5), each = 6), tax_yr = rep(2026:2031, 5))
+  d[, appr_land_val_filled := level_av * 0.4 * 1.03^(tax_yr - 2026)]
+  d[, appr_imps_val_filled := level_av * 0.6 * 1.03^(tax_yr - 2026)]
+  x <- tibble::as_tibble(d)
+  if (!is.null(mode)) attr(x, "nwmls_features") <- mode
+  x
+}
+p_setup <- function(growth_mode = "growth", model_age_h = 10, drop = NULL) {
+  unlink(proot, recursive = TRUE)
+  for (dd in c("cache", "cache_nwmls_growth", "outputs", "outputs_nwmls_growth", "model_nwmls_growth"))
+    dir.create(file.path(proot, "data", dd), recursive = TRUE)
+  m <- nwmls_stamp_mode(list(x_cols = "a"), "growth")
+  for (pfx in c("lgb_land_delta_cv_1", "lgb_impr_delta_cv_1")) {
+    f <- file.path(proot, "data", "model_nwmls_growth", paste0(pfx, ".rds"))
+    saveRDS(m, f); Sys.setFileTime(f, Sys.time() - model_age_h * 3600)
+  }
+  for (sc in c("baseline", "optimistic", "pessimistic")) {
+    rds <- paste0("panel_tbl_2006_2031_forecasted_", sc, "_res.rds")
+    saveRDS(mk_fc(1e6, "level"), file.path(proot, "data", "cache", rds))
+    saveRDS(mk_fc(9e5, growth_mode), file.path(proot, "data", "cache_nwmls_growth", rds))
+  }
+  pq <- "parcel_year_panel_2006_2031_forecasted_baseline_res.parquet"
+  writeLines("level parquet",  file.path(proot, "data", "outputs", pq))
+  writeLines("growth parquet", file.path(proot, "data", "outputs_nwmls_growth", pq))
+  for (f in drop) unlink(file.path(proot, "data", f))
+}
+md5 <- function(rel) unname(tools::md5sum(file.path(proot, "data", rel)))
+rds_b <- "panel_tbl_2006_2031_forecasted_baseline_res.rds"
+pq_b  <- "parcel_year_panel_2006_2031_forecasted_baseline_res.parquet"
+
+p_setup()
+lvl0 <- md5(file.path("cache", rds_b)); lvl_pq0 <- md5(file.path("outputs", pq_b))
+out <- capture.output(bdir <- suppressMessages(promote_growth_res(proot)))
+stopifnot(dir.exists(bdir), file.exists(file.path(bdir, "manifest.csv")),
+          nrow(data.table::fread(file.path(bdir, "manifest.csv"))) == 4L,       # 3 rds + 1 parquet
+          md5(file.path("cache", rds_b)) == md5(file.path("cache_nwmls_growth", rds_b)),
+          md5(file.path("outputs", pq_b)) == md5(file.path("outputs_nwmls_growth", pq_b)),
+          unname(tools::md5sum(file.path(bdir, "cache", rds_b))) == lvl0,
+          file.exists(file.path(proot, "data", "cache", "_PROMOTED_GROWTH_RES.txt")),
+          any(grepl("before_level_B", out)), any(grepl("-10.000%", out, fixed = TRUE)))
+out <- capture.output(suppressMessages(restore_level_res(bdir, proot)))
+stopifnot(md5(file.path("cache", rds_b)) == lvl0, md5(file.path("outputs", pq_b)) == lvl_pq0,
+          !file.exists(file.path(proot, "data", "cache", "_PROMOTED_GROWTH_RES.txt")))
+cat("PASS  promotion: level files backed up (manifest + md5), growth files swapped in, totals\n",
+    "      printed before/after; restore_level_res() round-trips to the original bytes\n", sep = "")
+
+nb <- function() length(list.files(file.path(proot, "data", "cache"), pattern = "^_level_res_backup_"))
+p_setup(drop = file.path("cache_nwmls_growth", "panel_tbl_2006_2031_forecasted_optimistic_res.rds"))
+expect_error(suppressMessages(promote_growth_res(proot)), "growth file\\(s\\) missing")
+stopifnot(md5(file.path("cache", rds_b)) == lvl0, nb() == 0L)
+p_setup(drop = file.path("outputs_nwmls_growth", pq_b))
+expect_error(suppressMessages(promote_growth_res(proot)), "growth file\\(s\\) missing")
+p_setup(growth_mode = "level")
+expect_error(suppressMessages(promote_growth_res(proot)),
+             "marked nwmls_features = \"level\", not \"growth\"")
+stopifnot(md5(file.path("cache", rds_b)) == lvl0, nb() == 0L)
+p_setup(growth_mode = NULL, model_age_h = 10)       # unstamped, newer than growth models: ok
+invisible(capture.output(bd2 <- suppressMessages(promote_growth_res(proot))))
+stopifnot(md5(file.path("cache", rds_b)) == md5(file.path("cache_nwmls_growth", rds_b)))
+p_setup(growth_mode = NULL, model_age_h = -10)      # unstamped, older than the models: refuse
+expect_error(suppressMessages(promote_growth_res(proot)), "not newer than the growth models")
+cat("PASS  promotion refuses: missing growth rds, level parquet without a growth twin, a\n",
+    "      level-marked growth file, an unstamped file older than the growth models (nothing\n",
+    "      changed, no backup made); an unstamped file with growth provenance is accepted\n", sep = "")
+
 cat("\nAll nwmls_growth tests passed.\n")

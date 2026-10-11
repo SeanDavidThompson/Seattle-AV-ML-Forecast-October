@@ -23,9 +23,9 @@ OVERNIGHT_DRY_RUN <- TRUE
 out <- capture.output(source(file.path("ad_hoc", "overnight_monday.R")))
 stopifnot(any(grepl("parsed OK. Nothing was run", out)),
           !file.exists(file.path(logs, "status.csv")),
-          length(list.files(file.path(logs, "steps"), pattern = "\\.R$")) == 18L)
+          length(list.files(file.path(logs, "steps"), pattern = "\\.R$")) == 20L)
 rm(OVERNIGHT_DRY_RUN)
-cat("PASS  dry run: 18 real step scripts written and parsed, nothing executed\n")
+cat("PASS  dry run: 20 real step scripts written and parsed, nothing executed\n")
 
 # ---- 2. dummy steps: isolation, logs, dependency skipping --------------------
 OVERNIGHT_STEPS_OVERRIDE <- list(
@@ -92,6 +92,74 @@ stopifnot(any(grepl("reuse: newest lgb_impr_delta_cv = lgb_impr_delta_cv_2026101
 rm(OVERNIGHT_ONLY, OVERNIGHT_D_REUSE_MODELS)
 cat("PASS  step d reuse: stops when the newest model is not the named stamp; otherwise\n",
     "      verifies stamps + growth mode and runs forecast-only on the cached panel\n", sep = "")
+
+# ---- 5. AB summary under the amended rule (2026-10-11) -----------------------------
+suppressPackageStartupMessages(library(data.table))
+sroot <- file.path(tempdir(), "ab_summary_test"); unlink(sroot, recursive = TRUE)
+dir.create(sroot); setwd(sroot)
+ids <- sprintf("%03d", 1:30)
+for (m in c("cache", "cache_nwmls_growth")) {
+  dir.create(file.path("data", m), recursive = TRUE)
+  for (sc in c("baseline", "optimistic", "pessimistic")) {
+    d <- CJ(parcel_id = ids, tax_yr = 2025:2031)
+    f <- c(baseline = 1.03, optimistic = 1.04, pessimistic = 1.02)[[sc]]
+    d[, appr_land_val := fifelse(tax_yr <= 2026, 3e5, NA_real_)]
+    d[, appr_imps_val := fifelse(tax_yr <= 2026, 4e5, NA_real_)]
+    d[, appr_land_val_filled := 3e5 * f^(tax_yr - 2026)]
+    d[, appr_imps_val_filled := 4e5 * f^(tax_yr - 2026)]
+    d[, total_assessed_filled := appr_land_val_filled + appr_imps_val_filled]
+    d[, land_method := fifelse(tax_yr == 2027 & parcel_id <= "010", "actual",
+                               fifelse(tax_yr > 2026, "delta", "observed"))]
+    d[, impr_method := land_method]
+    saveRDS(d, file.path("data", m, paste0("panel_tbl_2006_2031_forecasted_", sc, "_res.rds")))
+  }
+}
+dir.create("data/model"); dir.create("data/model_nwmls_growth")
+saveRDS(list(cv_rmse = 0.100), "data/model/lgb_land_delta_cv_1.rds")
+saveRDS(list(cv_rmse = 0.200), "data/model/lgb_impr_delta_cv_1.rds")
+saveRDS(structure(list(cv_rmse = 0.0987), nwmls_features = "growth"), "data/model_nwmls_growth/lgb_land_delta_cv_2.rds")
+saveRDS(structure(list(cv_rmse = 0.2011), nwmls_features = "growth"), "data/model_nwmls_growth/lgb_impr_delta_cv_2.rds")
+L <- "data/outputs_nwmls_growth/logs"; dir.create(L, recursive = TRUE)
+ids_s <- c("s0", "a", "d", "e4", "e3", "f1", "f2", "g1", "g2")
+write.csv(data.frame(id = ids_s, title = "t", deps = "",
+                     status = c("earlier run: ok", "earlier run: ok", "earlier run: ok", "ok", "ok",
+                                "earlier run: ok", "earlier run: ok", "earlier run: ok", "earlier run: ok"),
+                     started = "x", elapsed_min = 30), file.path(L, "status.csv"), row.names = FALSE)
+coerce <- "Warning in FUN(X[[i]], ...) : NAs introduced by coercion"
+writeLines(rep(coerce, 3), file.path(L, "s0.log"))      # only in s0 among level logs
+writeLines("ok", file.path(L, "a.log"))
+writeLines(c(coerce, coerce), file.path(L, "f1.log"))   # growth run rebuilt its NWMLS cache
+mk <- function(p, feats = TRUE) list(pass = p,
+  table = data.table(tax_yr = 2026:2031, total_av_minus5 = 1:6, total_av_base = 2:7,
+                     total_av_plus5 = 3:8, pct_minus5_vs_base = -0.01, pct_plus5_vs_base = 0.01),
+  features = if (feats) data.table(feature = "sea_pmedesfh_lag12_yoy", tax_yr = 2028L,
+                                   minus5 = -0.06, base = -0.01, plus5 = 0.03, moved = TRUE,
+                                   used_by_models = TRUE, splits_crossed_minus = 4L,
+                                   splits_crossed_plus = 3L) else NULL)
+saveRDS(mk(FALSE, FALSE), file.path(L, "e1_result.rds"))   # old level-shock runs
+saveRDS(mk(FALSE, FALSE), file.path(L, "e2_result.rds"))
+saveRDS(mk(TRUE), file.path(L, "e3_result.rds"))
+saveRDS(mk(TRUE), file.path(L, "e4_result.rds"))
+source(file.path(root, "ad_hoc", "overnight_summary.R"))
+txt <- capture.output(write_ab_summary(L))
+stopifnot(any(grepl("1. Sensitivity, growth shock \\(growth models\\)  : PASS", txt)),
+          any(grepl("original level shock: growth FAIL, level FAIL", txt)),
+          any(grepl("4. Clean run \\(vs all level logs incl. s0\\)      : PASS", txt)),
+          any(grepl("new warning lines: 0", txt)),
+          any(grepl("growth steps d/f1/f2 all ok: PASS", txt)),
+          any(grepl("splits_crossed_minus", txt)),
+          any(grepl("feature check: n/a \\(run before the feature check existed\\)", txt)),
+          tail(grep("^RULE", txt, value = TRUE), 1) == "RULE (amended 2026-10-11): MET - ship growth")
+saveRDS(mk(FALSE), file.path(L, "e4_result.rds"))
+txt <- capture.output(write_ab_summary(L))
+stopifnot(tail(grep("^RULE", txt, value = TRUE), 1) == "RULE (amended 2026-10-11): NOT MET - ship level")
+unlink(file.path(L, "e4_result.rds"))
+txt <- capture.output(write_ab_summary(L))
+stopifnot(tail(grep("^RULE", txt, value = TRUE), 1) == "RULE (amended 2026-10-11): NOT MET - ship level",
+          any(grepl("evidence missing for criterion 1", txt)))
+cat("PASS  AB summary: criterion 1 judged on e4 (growth shock) with the original shocks shown;\n",
+    "      Excel-read warnings in s0 no longer count as new; earlier-run statuses accepted;\n",
+    "      final line MET / NOT MET (missing e4 = not met)\n", sep = "")
 
 setwd(owd)
 cat("\nAll overnight runner checks passed.\n")

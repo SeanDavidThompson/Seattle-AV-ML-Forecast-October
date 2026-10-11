@@ -613,6 +613,9 @@ for (scenario_name in scenario) {  # single iteration — kept for structure
 
   # ---- Write outputs ----------------------------------------------------
   panel_out <- as_tibble(panel_all)
+  # Which nwmls_features mode produced this forecast (attribute only; the
+  # data are unchanged).  ad_hoc/promote_growth_res.R checks it.
+  attr(panel_out, "nwmls_features") <- nwmls_run_mode()
 
   rds_path <- file.path(
     cache_dir,

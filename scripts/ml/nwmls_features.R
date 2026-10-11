@@ -557,3 +557,25 @@ nwmls_shock_price <- function(nwmls_raw, factor, after) {
   }
   nwmls_raw
 }
+
+# Growth shock: in months after `after`, multiply the median SFH price by
+# (1 + g)^(k / 12), k = months after `after` (1 for the first forecast
+# month).  A compounding change in the growth RATE, unlike
+# nwmls_shock_price(), which is a one-time LEVEL shift.  A level shift moves
+# year-over-year features only while the shocked and unshocked trailing
+# windows overlap (TY2027-2028 for a July 2026 boundary); a growth shock
+# moves them in every forecast year.  Same columns as nwmls_shock_price().
+nwmls_growth_shock_factor <- function(dates, g, after) {
+  k <- (as.integer(format(dates, "%Y")) - as.integer(format(after, "%Y"))) * 12L +
+       (as.integer(format(dates, "%m")) - as.integer(format(after, "%m")))
+  ifelse(!is.na(k) & k > 0, (1 + g)^(k / 12), 1)
+}
+
+nwmls_shock_price_growth <- function(nwmls_raw, g, after) {
+  cols <- intersect(c("sea_pmedesfh_fav", "sea_pmedesfh_f", "sea_pmedesfh"),
+                    names(nwmls_raw))
+  if (!length(cols)) stop("nwmls_shock_price_growth: no sea_pmedesfh column found")
+  f <- nwmls_growth_shock_factor(nwmls_raw[["date"]], g, after)
+  for (cn in cols) nwmls_raw[[cn]] <- nwmls_raw[[cn]] * f
+  nwmls_raw
+}

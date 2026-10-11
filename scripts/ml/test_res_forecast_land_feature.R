@@ -80,7 +80,9 @@ for (mode in c("level", "growth")) {
   out <- run06(mode, mk_panel())
   f <- out[tax_yr >= 2027]
   # land filled into the improvement predictor every forecast year
-  stopifnot(all(!is.na(f[["log_appr_land_val"]])),
+  stopifnot(identical(attr(get("panel_tbl_forecasted_res", envir = .GlobalEnv),
+                            "nwmls_features"), mode),           # 06 stamps its mode
+            all(!is.na(f[["log_appr_land_val"]])),
             isTRUE(all.equal(f[["log_appr_land_val"]], f[["log_land_filled"]])))
   # improvement delta follows each parcel's land: 0.02 + 0.05 * (land - 12.5)
   d <- f[, .(parcel_id, tax_yr, dimp = log_impr_filled - log_impr_filled_lag1,
