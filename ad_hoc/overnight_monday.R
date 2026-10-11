@@ -20,6 +20,9 @@
 #   d   growth baseline residential retrain, separate dirs               [c]
 #   e1  sensitivity, level models                                        [a]
 #   e2  sensitivity, growth models                                       [d]
+#   e4  sensitivity, growth models, GROWTH shock (criterion 1 as amended
+#       2026-10-11; runs before e3)                                      [d]
+#   e3  sensitivity, level models, growth shock                          [a]
 #   f1  growth optimistic residential (growth models)                    [d]
 #   f2  growth pessimistic residential                                   [d]
 #   g1  level optimistic residential (level models)                      [s0]
@@ -213,6 +216,26 @@ sd <- here::here("data", "scratch_nwmls_sens_growth")
 r <- run_nwmls_sensitivity(model_dir = G[["model_dir"]], cache_dir = G[["cache_dir"]],
                            scratch_dir = sd)
 saveRDS(r, file.path(LOG_DIR, "e2_result.rds"))
+unlink(sd, recursive = TRUE)
+'),
+  # Growth shock (NWMLS_GROWTH_DECISION.md amendment 2026-10-11).  e4 is the
+  # one criterion 1 is judged on, so it runs first.
+  list(id = "e4", title = "sensitivity, growth models, growth shock", deps = "d", code = '
+NWMLS_SENS_DEFINE_ONLY <- TRUE
+source(file.path("ad_hoc", "nwmls_sensitivity.R"))
+sd <- here::here("data", "scratch_nwmls_sens_growth_growth")
+r <- run_nwmls_sensitivity(model_dir = G[["model_dir"]], cache_dir = G[["cache_dir"]],
+                           scratch_dir = sd, shock_type = "growth")
+saveRDS(r, file.path(LOG_DIR, "e4_result.rds"))
+unlink(sd, recursive = TRUE)
+'),
+  list(id = "e3", title = "sensitivity, level models, growth shock", deps = "a", code = '
+NWMLS_SENS_DEFINE_ONLY <- TRUE
+source(file.path("ad_hoc", "nwmls_sensitivity.R"))
+sd <- here::here("data", "scratch_nwmls_sens_level_growth")
+r <- run_nwmls_sensitivity(model_dir = CFG[["model_dir"]], cache_dir = CFG[["cache_dir"]],
+                           scratch_dir = sd, shock_type = "growth")
+saveRDS(r, file.path(LOG_DIR, "e3_result.rds"))
 unlink(sd, recursive = TRUE)
 '),
   list(id = "f1", title = "growth optimistic residential", deps = "d", code = '

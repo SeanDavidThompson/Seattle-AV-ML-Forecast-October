@@ -3,31 +3,44 @@
 #
 # The question: if house prices come in lower, does our forecast come in
 # lower?  Re-run the residential Step 6 forecast on already-trained models
-# with the baseline NWMLS median SFH price multiplied by 0.95 / 1.00 / 1.05
-# in the FORECAST months only (after the last observed month, detected from
-# the export, never hard-coded).  Everything else is the baseline run.
+# with the baseline NWMLS median SFH price shocked in the FORECAST months only
+# (after the last observed month, detected from the export, never
+# hard-coded).  Everything else is the baseline run.
 #
-#   PASS  residential total AV is ordered -5% < base < +5% in every year
-#         2028-2031.  (TY2027 is mostly anchored to the KCA area reports and
-#         is shown but not judged.)
+# shock_type = "level" (default, the original test): price x 0.95 / x 1.05
+#   in every forecast month - a one-time level shift.
+# shock_type = "growth": price x (1 + g)^(k/12), g = -5% / +5% a year, k =
+#   months after the last observed month - a change in the growth rate.  A
+#   level shift cannot move year-over-year features after TY2028, so the
+#   growth-mode models are judged on this shock (NWMLS_GROWTH_DECISION.md,
+#   amendment 2026-10-11).
+#
+#   PASS  residential total AV is ordered -shock < base < +shock in every
+#         year 2028-2031.  (TY2027 is mostly anchored to the KCA area reports
+#         and is shown but not judged.)
+#
+# Every run also prints a feature check: sea_pmedesfh_lag12_yoy,
+# sea_pmedesfh_lag6_yoy, sea_pmedesfh_lag12 and sea_pmedesfh_lag6 by tax year
+# for minus / base / plus, as Step 6 sees them, with whether each moved and
+# whether the models use it.
 #
 # Works for either nwmls_features mode: the mode is read from the models'
-# stamp, and the derived NWMLS columns for that mode are rebuilt from the
-# shocked monthly series.
+# stamp, and the derived NWMLS columns are rebuilt from the shocked series.
 #
 # Read-only on production: models are read from model_dir, the extended
 # baseline panel and training frames from cache_dir.  Every write goes under
-# scratch_dir (refused if it is a production directory).  Writes one CSV to
-# out_dir.  Nothing is trained.
+# scratch_dir (default data/scratch_nwmls_sens_<mode>_<shock_type>; refused
+# if it is a production or A/B cache/model/output directory).  Writes
+# out_dir/nwmls_sensitivity_<mode>_<shock_type>.csv.  Nothing is trained.
 #
 # Run (fresh R session, repo root as working directory):
-#   source("ad_hoc/nwmls_sensitivity.R")      # defines + runs on defaults
-# or, to point at the growth A/B directories:
+#   source("ad_hoc/nwmls_sensitivity.R")      # level models, level shock
+# or:
 #   NWMLS_SENS_DEFINE_ONLY <- TRUE
 #   source("ad_hoc/nwmls_sensitivity.R")
-#   run_nwmls_sensitivity(model_dir   = "data/model_nwmls_growth",
-#                         cache_dir   = "data/cache_nwmls_growth",
-#                         scratch_dir = "data/scratch_nwmls_sens_growth")
+#   run_nwmls_sensitivity(model_dir  = "data/model_nwmls_growth",
+#                         cache_dir  = "data/cache_nwmls_growth",
+#                         shock_type = "growth")
 #
 # STYLE: no $ operator - it gets stripped in transit. Use x[["name"]].
 ###############################################################################
@@ -72,11 +85,23 @@ sens_latest <- function(dir, prefix) {
   f[which.max(file.info(f)[["mtime"]])]
 }
 
+# Feature columns printed for every run (as Step 6 sees them in its inputs).
+SENS_FEATURE_COLS <- c("sea_pmedesfh_lag12_yoy", "sea_pmedesfh_lag6_yoy",
+                       "sea_pmedesfh_lag12", "sea_pmedesfh_lag6")
+
+# shock_type:
+#   "level"  (default) - price x 0.95 / x 1.05 in every forecast month: a
+#            one-time level shift (the original test; CSV content unchanged)
+#   "growth" - price x (1 + g)^(k/12), g = -5% / +5% a year, k = months after
+#            the last observed month: a change in the growth rate, which is
+#            what the growth-mode _yoy features can see in every year
+#            (NWMLS_GROWTH_DECISION.md, amendment 2026-10-11)
 run_nwmls_sensitivity <- function(
     model_dir      = CFG[["model_dir"]],
     cache_dir      = CFG[["cache_dir"]],
     scratch_dir    = NULL,
-    shocks         = c(minus5 = 0.95, base = 1.00, plus5 = 1.05),
+    shock_type     = c("level", "growth"),
+    shocks         = NULL,
     nwmls_dir      = here::here("data", "nwmls"),
     forecast_start = CFG[["forecast_start"]],
     forecast_end   = CFG[["forecast_end"]],
@@ -85,6 +110,10 @@ run_nwmls_sensitivity <- function(
     out_dir        = here::here("output", "exhibits")) {
 
   t0 <- Sys.time()
+  shock_type <- match.arg(shock_type)
+  if (is.null(shocks))
+    shocks <- if (shock_type == "level") c(minus5 = 0.95, base = 1.00, plus5 = 1.05)
+              else c(minus5 = -0.05, base = 0, plus5 = 0.05)
   forecast_start <- as.integer(forecast_start)
   forecast_end   <- as.integer(forecast_end)
   stopifnot(names(shocks) %in% c("minus5", "base", "plus5"),
@@ -104,14 +133,17 @@ run_nwmls_sensitivity <- function(
 
   # ---- scratch dir: never a production location ----------------------------
   if (is.null(scratch_dir))
-    scratch_dir <- here::here("data", paste0("scratch_nwmls_sens_", mode))
+    scratch_dir <- here::here("data", paste0("scratch_nwmls_sens_", mode, "_", shock_type))
   dir.create(scratch_dir, recursive = TRUE, showWarnings = FALSE)
   np <- function(p) normalizePath(p, winslash = "/", mustWork = FALSE)
   protected <- unique(np(c(cache_dir, model_dir, CFG[["cache_dir"]],
                            CFG[["model_dir"]], CFG[["output_dir"]],
                            here::here("data", "cache"),
                            here::here("data", "model"),
-                           here::here("data", "outputs"), nwmls_dir)))
+                           here::here("data", "outputs"),
+                           here::here("data", "cache_nwmls_growth"),
+                           here::here("data", "model_nwmls_growth"),
+                           here::here("data", "outputs_nwmls_growth"), nwmls_dir)))
   if (np(scratch_dir) %in% protected)
     stop("scratch_dir must not be a production directory: ", scratch_dir)
   cat("Scratch: ", np(scratch_dir), "\n", sep = "")
@@ -179,19 +211,32 @@ run_nwmls_sensitivity <- function(
   assign("model_dir",      model_dir,      envir = ge)
 
   need_cols <- setdiff(names(base_ann), "tax_yr")
-  res <- list()
+  used <- union(lgb_land_delta_cv[["x_cols"]], lgb_impr_delta_cv[["x_cols"]])
+  res <- list(); feats <- list()
   for (tag in names(shocks)) {
     fac <- shocks[[tag]]
-    cat("\n=== ", tag, " (price x ", fac, " after ", format(last_obs, "%Y-%m"),
-        ") ===\n", sep = "")
-    ann <- nwmls_build_annual(
-      nwmls_shock_price(raw[["data"]], fac, last_obs))[["annual"]]
+    if (shock_type == "level") {
+      cat("\n=== ", tag, " (price x ", fac, " after ", format(last_obs, "%Y-%m"),
+          ") ===\n", sep = "")
+      ann <- nwmls_build_annual(
+        nwmls_shock_price(raw[["data"]], fac, last_obs))[["annual"]]
+    } else {
+      cat("\n=== ", tag, " (price x (1 ", sprintf("%+g", fac), ")^(k/12), k = months after ",
+          format(last_obs, "%Y-%m"), ") ===\n", sep = "")
+      ann <- nwmls_build_annual(
+        nwmls_shock_price_growth(raw[["data"]], fac, last_obs))[["annual"]]
+    }
     # Overwrite every NWMLS column in the forecast rows, as 05_extend does
     m <- match(ext[["tax_yr"]][fut], ann[["tax_yr"]])
     for (cn in need_cols) {
       if (!cn %in% names(ext)) ext[, (cn) := NA_real_]
       set(ext, i = fut, j = cn, value = ann[[cn]][m])
     }
+    # what Step 6 will see: one value per tax year (city-level features)
+    fy <- ext[fut, lapply(.SD, function(x) x[1L]), by = tax_yr,
+              .SDcols = intersect(SENS_FEATURE_COLS, names(ext))]
+    fy[, case := tag]
+    feats[[tag]] <- fy
     d <- file.path(scratch_dir, tag)
     assign("cache_dir",  file.path(d, "cache"),   envir = ge)
     assign("output_dir", file.path(d, "outputs"), envir = ge)
@@ -218,12 +263,53 @@ run_nwmls_sensitivity <- function(
   pass <- length(ok_yr) == length(judge_years) && all(ok_yr)
   wide[, nwmls_features := mode]
 
+  # ---- feature check: did the shock reach what the models see? -------------
+  ft <- rbindlist(feats, fill = TRUE)
+  ft <- melt(ft, id.vars = c("tax_yr", "case"), variable.name = "feature",
+             variable.factor = FALSE)
+  ft <- dcast(ft, feature + tax_yr ~ case, value.var = "value")
+  ft[, used_by_models := feature %in% used]
+  ft[, moved := abs(minus5 - base) > 1e-12 | abs(plus5 - base) > 1e-12]
+  # Split thresholds crossed (both delta boosters).  LightGBM sends
+  # x <= threshold left, so a shocked value changes a tree's path only if it
+  # lands on the other side of some threshold of that feature from the base
+  # value.  0 crossings for every used feature in a year = that year's
+  # predictions cannot change (the split-resolution effect).
+  thr <- tryCatch(rbindlist(lapply(list(lgb_land_delta_cv, lgb_impr_delta_cv), function(cv)
+           as.data.table(lgb.model.dt.tree(cv[["model"]]))[
+             !is.na(split_feature), .(feature = split_feature, threshold)])),
+         error = function(e) NULL)
+  cross <- function(f, a, b) {
+    if (is.null(thr)) return(NA_integer_)
+    t <- thr[feature == f, threshold]
+    if (!length(t) || is.na(a) || is.na(b)) return(0L)
+    sum((a <= t) != (b <= t))
+  }
+  ft[, `:=`(splits_crossed_minus = mapply(cross, feature, base, minus5),
+            splits_crossed_plus  = mapply(cross, feature, base, plus5))]
+  setorder(ft, feature, tax_yr)
+  setcolorder(ft, c("feature", "tax_yr", "minus5", "base", "plus5",
+                    "moved", "used_by_models"))
+  cat("\n=== Feature check (", mode, " models, ", shock_type, " shock): NWMLS ",
+      "price features in the Step 6 inputs ===\n", sep = "")
+  print(ft[, .(feature, tax_yr,
+               minus5 = signif(minus5, 6), base = signif(base, 6),
+               plus5 = signif(plus5, 6), moved, used_by_models,
+               splits_crossed_minus, splits_crossed_plus)], nrows = 100)
+  if (!is.null(thr)) {
+    nc <- ft[used_by_models == TRUE, .(n = sum(splits_crossed_minus + splits_crossed_plus)),
+             by = tax_yr][order(tax_yr)]
+    cat("Split thresholds crossed by the shock, all used price features, by tax year: ",
+        paste0(nc[["tax_yr"]], "=", nc[["n"]], collapse = ", "),
+        "\n(0 in a year = the shock cannot change that year's predictions)\n", sep = "")
+  }
+
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-  out_csv <- file.path(out_dir, paste0("nwmls_sensitivity_", mode, ".csv"))
+  out_csv <- file.path(out_dir, paste0("nwmls_sensitivity_", mode, "_", shock_type, ".csv"))
   fwrite(wide, out_csv)
 
   cat("\n=== Residential total AV, NWMLS price -5% / base / +5% (", mode,
-      " models) ===\n", sep = "")
+      " models, ", shock_type, " shock) ===\n", sep = "")
   show <- wide[, .(tax_yr,
                    minus5_bn = round(total_av_minus5 / 1e9, 2),
                    base_bn   = round(total_av_base   / 1e9, 2),
@@ -235,14 +321,16 @@ run_nwmls_sensitivity <- function(
                    g_plus5  = sprintf("%.2f%%", 100 * matched_growth_plus5))]
   print(show)
   bad <- wide[tax_yr %in% judge_years][!ok_yr, tax_yr]
-  cat("\n", if (pass) "PASS" else "FAIL", "  [", mode, "]  total AV ordered ",
+  cat("\n", if (pass) "PASS" else "FAIL", "  [", mode, " models, ", shock_type,
+      " shock]  total AV ordered ",
       "-5% < base < +5% in every year ", min(judge_years), "-", max(judge_years),
       if (!pass) paste0(" -- fails in ", paste(bad, collapse = ", ")) else "",
       "\n", sep = "")
   cat("CSV: ", out_csv, "\nElapsed: ",
       round(as.numeric(difftime(Sys.time(), t0, units = "mins")), 1), " min\n",
       sep = "")
-  invisible(list(table = wide, pass = pass, mode = mode))
+  invisible(list(table = wide, pass = pass, mode = mode, shock_type = shock_type,
+                 features = ft))
 }
 
 if (!isTRUE(get0("NWMLS_SENS_DEFINE_ONLY", envir = .GlobalEnv,

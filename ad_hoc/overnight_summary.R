@@ -110,12 +110,22 @@ write_ab_summary <- function(log_dir, root = ".") {
   tbl(cv)
 
   # ---- sensitivity ------------------------------------------------------------------
-  add("SENSITIVITY (NWMLS price x0.95 / x1.05 in forecast months)"); add(strrep("-", 72))
+  # e1 / e2: original level shock (price x0.95 / x1.05), level / growth models
+  # e3 / e4: growth shock (price x (1 +/- 5%)^(k/12)), level / growth models
+  # Criterion 1 (amended 2026-10-11) is judged on e4.
+  add("SENSITIVITY"); add(strrep("-", 72))
   sens <- list()
-  for (m in c("level", "growth")) {
-    r <- rd(if (m == "level") "e1_result.rds" else "e2_result.rds")
-    sens[[m]] <- if (is.null(r)) NA else isTRUE(r[["pass"]])
-    add(sprintf("  %-6s : %s", m, if (is.null(r)) "n/a (step did not finish)"
+  runs <- list(
+    list(id = "e1", models = "level",  shock = "level"),
+    list(id = "e2", models = "growth", shock = "level"),
+    list(id = "e4", models = "growth", shock = "growth"),
+    list(id = "e3", models = "level",  shock = "growth"))
+  for (rr in runs) {
+    r <- rd(paste0(rr[["id"]], "_result.rds"))
+    k <- paste(rr[["models"]], rr[["shock"]], sep = "_")
+    sens[[k]] <- if (is.null(r)) NA else isTRUE(r[["pass"]])
+    add(sprintf("  %s  %-6s models, %-6s shock : %s", rr[["id"]], rr[["models"]], rr[["shock"]],
+                if (is.null(r)) "n/a (step did not run / finish)"
                 else if (isTRUE(r[["pass"]])) "PASS" else "FAIL"))
     if (!is.null(r)) {
       t <- as.data.frame(r[["table"]])
@@ -124,6 +134,16 @@ write_ab_summary <- function(log_dir, root = ".") {
       for (cn in grep("^total_av", names(t), value = TRUE)) t[[cn]] <- round(t[[cn]] / 1e9, 3)
       for (cn in grep("^pct_", names(t), value = TRUE)) t[[cn]] <- round(100 * t[[cn]], 3)
       tbl(t)
+      ft <- r[["features"]]
+      if (is.null(ft)) {
+        add("    feature check: n/a (run before the feature check existed)", "")
+      } else {
+        add("    feature check (Step 6 inputs; moved = differs from base; splits_crossed = ",
+            "booster thresholds the shocked value crosses):")
+        ft <- as.data.frame(ft)
+        for (cn in c("minus5", "base", "plus5")) ft[[cn]] <- signif(ft[[cn]], 6)
+        tbl(ft)
+      }
     }
   }
   add("")
@@ -160,14 +180,20 @@ write_ab_summary <- function(log_dir, root = ".") {
   # ---- decision rule ------------------------------------------------------------------
   add("DECISION RULE (NWMLS_GROWTH_DECISION.md)"); add(strrep("-", 72))
   v <- function(x) if (is.na(x)) "n/a" else if (isTRUE(x)) "PASS" else "FAIL"
-  c1 <- sens[["growth"]]
+  c1 <- sens[["growth_growth"]]         # amended: growth models, growth shock
   c2 <- pes_ok[["growth"]]
   c3 <- if (all(is.finite(cv[["pct_change"]]))) all(cv[["pct_change"]] <= 3) else NA
   # 4: no hard stop in the growth runs, no warning text absent from the
   # level runs, NA counts and TY2027 anchoring identical to level.
-  gst <- if (is.null(st)) NA else st[["status"]][match(c("d", "f1", "f2"), st[["id"]])]
-  no_stop <- if (is.null(st)) NA else all(gst == "ok")
-  wl <- ab_warnings(file.path(log_dir, c("a.log", "g1.log", "g2.log")))
+  # A step not re-run in an OVERNIGHT_ONLY pass reads "earlier run: ok".
+  gst <- if (is.null(st)) NA else
+    sub("^earlier run: ", "", st[["status"]][match(c("d", "f1", "f2"), st[["id"]])])
+  no_stop <- if (is.null(st)) NA else all(!is.na(gst) & gst == "ok")
+  # Amended 2026-10-11: compare against ALL level-mode logs, including s0
+  # (NWMLS Excel read warnings appear there and in the growth runs that
+  # rebuild their NWMLS cache).
+  wl <- ab_warnings(file.path(log_dir, c("s0.log", "a.log", "b.log", "e1.log", "e3.log",
+                                         "g1.log", "g2.log")))
   wg <- ab_warnings(file.path(log_dir, c("d.log", "f1.log", "f2.log")))
   new_w <- setdiff(wg, wl)
   same_na <- if (nrow(nas[["level"]]) && nrow(nas[["growth"]]))
@@ -179,19 +205,22 @@ write_ab_summary <- function(log_dir, root = ".") {
                      check.attributes = FALSE)) else NA
   c4 <- if (any(is.na(c(no_stop, same_na, same_anchor)))) NA else
     no_stop && !length(new_w) && same_na && same_anchor
-  add(sprintf("  1. Sensitivity (growth passes; level shown)   : %s   [level: %s]", v(c1), v(sens[["level"]])))
+  add(sprintf("  1. Sensitivity, growth shock (growth models)  : %s   [level models: %s | original level shock: growth %s, level %s]",
+              v(c1), v(sens[["level_growth"]]), v(sens[["growth_level"]]), v(sens[["level_level"]])))
   add(sprintf("  2. Scenarios (growth pes <= base, 2028-2031)  : %s   [level: %s]", v(c2), v(pes_ok[["level"]])))
   add(sprintf("  3. CV (growth <= level + 3%%, land and impr)   : %s   [%s]", v(c3),
               paste0(cv[["model"]], " ", cv[["pct_change"]], "%", collapse = ", ")))
-  add(sprintf("  4. Clean run                                   : %s", v(c4)))
+  add(sprintf("  4. Clean run (vs all level logs incl. s0)      : %s", v(c4)))
   add(sprintf("       growth steps d/f1/f2 all ok: %s | NA counts = level: %s | TY2027 anchoring = level: %s | new warning lines: %d",
               v(no_stop), v(same_na), v(same_anchor), length(new_w)))
   if (length(new_w)) { add("       warnings in growth logs not seen in level logs:"); for (x in new_w) add("         ", x) }
   all4 <- c(c1, c2, c3, c4)
   add("")
-  add("  RULE: ", if (any(is.na(all4))) "INCOMPLETE - some evidence missing; ship level unless resolved"
-      else if (all(all4)) "ALL FOUR PASS - growth may be used for October"
-      else "NOT MET - ship level")
+  if (any(is.na(all4)))
+    add("  (evidence missing for criterion ", paste(which(is.na(all4)), collapse = ", "),
+        " - counts as not met)")
+  add("RULE (amended 2026-10-11): ",
+      if (!any(is.na(all4)) && all(all4)) "MET - ship growth" else "NOT MET - ship level")
   add("")
   add("Optimistic vs baseline is not judged (optimistic NWMLS price input is below baseline).")
 
