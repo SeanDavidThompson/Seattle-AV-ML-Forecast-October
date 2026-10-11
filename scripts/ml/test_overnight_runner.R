@@ -93,6 +93,27 @@ rm(OVERNIGHT_ONLY, OVERNIGHT_D_REUSE_MODELS)
 cat("PASS  step d reuse: stops when the newest model is not the named stamp; otherwise\n",
     "      verifies stamps + growth mode and runs forecast-only on the cached panel\n", sep = "")
 
+# ---- 4b. a root path containing backslashes (Windows UNC: \\\\server/share) ---------
+# Paths written into the step scripts must be escaped; an unescaped "\\\\"
+# parses as one backslash and every step dies before its log opens.
+broot <- file.path(tempdir(), "srv\\share")
+unlink(broot, recursive = TRUE); dir.create(file.path(broot, "ad_hoc"), recursive = TRUE)
+dir.create(file.path(broot, "scripts", "ml"), recursive = TRUE)
+invisible(file.copy(file.path(root, "ad_hoc", "overnight_monday.R"), file.path(broot, "ad_hoc")))
+invisible(file.copy(file.path(root, "scripts", "ml", "main_ml.R"), file.path(broot, "scripts", "ml")))
+setwd(broot)
+OVERNIGHT_ROOT <- broot
+OVERNIGHT_STEPS_OVERRIDE <- list(list(id = "u1", title = "unc", deps = character(0), always = TRUE,
+                                      code = 'cat("wd", getwd(), "\\n"); cat("logdir", LOG_DIR, "\\n")'))
+invisible(capture.output(source(file.path("ad_hoc", "overnight_monday.R"))))
+bl <- file.path(broot, "data", "outputs_nwmls_growth", "logs")
+stopifnot(read.csv(file.path(bl, "status.csv"))[["status"]] == "ok",
+          any(grepl(paste0("wd ", broot), readLines(file.path(bl, "u1.log")), fixed = TRUE)),
+          any(grepl(paste0("logdir ", bl), readLines(file.path(bl, "u1.log")), fixed = TRUE)))
+rm(OVERNIGHT_ROOT, OVERNIGHT_STEPS_OVERRIDE)
+setwd(root)
+cat("PASS  root path with a backslash (UNC): step scripts get escaped paths, step runs and logs\n")
+
 # ---- 5. AB summary under the amended rule (2026-10-11) -----------------------------
 suppressPackageStartupMessages(library(data.table))
 sroot <- file.path(tempdir(), "ab_summary_test"); unlink(sroot, recursive = TRUE)
