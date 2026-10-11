@@ -1,0 +1,299 @@
+NWMLS level vs growth A/B summary - written 2026-10-10 23:36:34
+========================================================================
+
+STEP STATUS
+------------------------------------------------------------------------
+                  id                                         title
+                  s0 NWMLS forecast caches from the newest vintage
+                   a level baseline residential (TY2027 anchoring)
+                   b          res_driver_audit on the level models
+                   c                           stage growth inputs
+                   d           growth baseline residential retrain
+                  e1                     sensitivity, level models
+                  e2                    sensitivity, growth models
+                  e4      sensitivity, growth models, growth shock
+                  e3       sensitivity, level models, growth shock
+                  f1                 growth optimistic residential
+                  f2                growth pessimistic residential
+                  g1                  level optimistic residential
+                  g2                 level pessimistic residential
+      h_com_baseline                com baseline (existing models)
+    h_condo_baseline              condo baseline (existing models)
+    h_com_optimistic              com optimistic (existing models)
+  h_condo_optimistic            condo optimistic (existing models)
+   h_com_pessimistic             com pessimistic (existing models)
+ h_condo_pessimistic           condo pessimistic (existing models)
+                   i                                AB_SUMMARY.txt
+              status elapsed_min             started
+     earlier run: ok         0.1 2026-10-10 02:03:23
+     earlier run: ok        16.3 2026-10-10 17:23:47
+     earlier run: ok         2.1 2026-10-10 02:22:20
+     earlier run: ok         0.3 2026-10-10 02:24:25
+     earlier run: ok        52.8 2026-10-10 17:40:08
+     earlier run: ok        23.6 2026-10-10 18:32:56
+ earlier run: FAILED         0.0 2026-10-10 21:54:33
+                  ok        23.6 2026-10-10 22:49:57
+                  ok        23.0 2026-10-10 23:13:35
+     earlier run: ok        19.6 2026-10-10 19:22:23
+     earlier run: ok        16.9 2026-10-10 19:41:58
+     earlier run: ok        16.1 2026-10-10 19:58:55
+     earlier run: ok        16.2 2026-10-10 20:15:03
+ earlier run: FAILED         1.2 2026-10-10 04:20:43
+ earlier run: FAILED         1.1 2026-10-10 04:21:58
+ earlier run: FAILED         1.1 2026-10-10 04:23:07
+ earlier run: FAILED         1.1 2026-10-10 04:24:16
+ earlier run: FAILED         1.2 2026-10-10 04:25:24
+ earlier run: FAILED         1.3 2026-10-10 04:26:33
+             running          NA 2026-10-10 23:36:33
+
+Total elapsed: 3.63 h
+NWMLS FILE READ BY EACH RUN
+------------------------------------------------------------------------
+Vintage resolved for each scenario (s0):
+    scenario                                            file vintage
+    baseline    2026-06_nwmls_housing_forecast_baseline.xlsx 2026-06
+  optimistic  2026-06_nwmls_housing_forecast_optimistic.xlsx 2026-06
+ pessimistic 2026-06_nwmls_housing_forecast_pessimistic.xlsx 2026-06
+
+data/cache NWMLS forecast cache, 12-month mean price, before vs after s0:
+    scenario tax_yr prev_price_lag12 new_price_lag12 changed
+    baseline   2026         988383.2        988383.2   FALSE
+    baseline   2027         959309.7        959309.7   FALSE
+    baseline   2028         945409.7        945409.7   FALSE
+    baseline   2029         950109.7        950109.7   FALSE
+    baseline   2030         967321.5        967321.5   FALSE
+    baseline   2031         981477.0        981477.0   FALSE
+  optimistic   2026         988383.2        988383.2   FALSE
+  optimistic   2027         956452.8        956452.8   FALSE
+  optimistic   2028         937465.9        937465.9   FALSE
+  optimistic   2029         943118.9        943118.9   FALSE
+  optimistic   2030         961586.7        961586.7   FALSE
+  optimistic   2031         975730.1        975730.1   FALSE
+ pessimistic   2026         988383.2        988383.2   FALSE
+ pessimistic   2027         955693.9        955693.9   FALSE
+ pessimistic   2028         917979.7        917979.7   FALSE
+ pessimistic   2029         910663.5        910663.5   FALSE
+ pessimistic   2030         927519.4        927519.4   FALSE
+ pessimistic   2031         947716.0        947716.0   FALSE
+
+  a                      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  b                      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  c                      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  d                      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  e1                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+  e3                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+  e4                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06)
+  f1                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_optimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_optimistic.rds
+  f2                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_pessimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_pessimistic.rds
+  g1                     no NWMLS read (used the cached NWMLS forecast / not applicable)
+  g2                     no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_com_baseline         no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_com_optimistic       no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_com_pessimistic      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_condo_baseline       no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_condo_optimistic     no NWMLS read (used the cached NWMLS forecast / not applicable)
+  h_condo_pessimistic    no NWMLS read (used the cached NWMLS forecast / not applicable)
+  i                      no NWMLS read (used the cached NWMLS forecast / not applicable)
+  s0                     Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_baseline.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_baseline.rds | Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_optimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_optimistic.rds | Reading NWMLS from Excel: 2026-06_nwmls_housing_forecast_pessimistic.xlsx (vintage 2026-06) | 💾 NWMLS forecast cached to: nwmls_fcst_2026_2031_pessimistic.rds
+
+CV (rolling-CV RMSE, newest residential delta models)
+------------------------------------------------------------------------
+             model                            level_file level_mode  level_cv
+ lgb_land_delta_cv lgb_land_delta_cv_20261010_011253.rds      level 0.1328136
+ lgb_impr_delta_cv lgb_impr_delta_cv_20261010_012350.rds      level 0.4135928
+                           growth_file growth_mode growth_cv pct_change
+ lgb_land_delta_cv_20261010_175642.rds      growth 0.1310373      -1.34
+ lgb_impr_delta_cv_20261010_180632.rds      growth 0.4158941       0.56
+
+SENSITIVITY
+------------------------------------------------------------------------
+  e1  level  models, level  shock : FAIL
+ tax_yr total_av_minus5 total_av_base total_av_plus5 pct_minus5_vs_base
+   2026         168.694       168.694        168.694              0.000
+   2027         167.269       167.269        167.269              0.000
+   2028         174.468       174.879        174.680             -0.235
+   2029         181.198       182.016        181.668             -0.449
+   2030         189.308       190.284        189.957             -0.513
+   2031         198.001       199.028        198.725             -0.516
+ pct_plus5_vs_base
+             0.000
+             0.000
+            -0.114
+            -0.191
+            -0.172
+            -0.152
+
+    feature check: n/a (run before the feature check existed)
+  e2  growth models, level  shock : n/a (step did not run / finish)
+  e4  growth models, growth shock : PASS
+ tax_yr total_av_minus5 total_av_base total_av_plus5 pct_minus5_vs_base
+   2026         168.694       168.694        168.694              0.000
+   2027         167.269       167.269        167.269              0.000
+   2028         167.604       169.909        169.947             -1.356
+   2029         172.972       174.830        175.442             -1.063
+   2030         177.001       177.965        178.472             -0.542
+   2031         184.145       184.246        184.521             -0.055
+ pct_plus5_vs_base
+             0.000
+             0.000
+             0.022
+             0.350
+             0.285
+             0.149
+
+    feature check (Step 6 inputs; moved = differs from base; splits_crossed = booster thresholds the shocked value crosses):
+                feature tax_yr       minus5         base        plus5 moved
+     sea_pmedesfh_lag12   2027  9.52313e+05  9.59310e+05  9.66086e+05  TRUE
+     sea_pmedesfh_lag12   2028  8.96322e+05  9.45410e+05  9.94793e+05  TRUE
+     sea_pmedesfh_lag12   2029  8.55665e+05  9.50110e+05  1.04981e+06  TRUE
+     sea_pmedesfh_lag12   2030  8.27601e+05  9.67321e+05  1.12228e+06  TRUE
+     sea_pmedesfh_lag12   2031  7.97743e+05  9.81477e+05  1.19561e+06  TRUE
+ sea_pmedesfh_lag12_yoy   2027 -3.71768e-02 -2.98566e-02 -2.28178e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2028 -6.05935e-02 -1.45956e-02  2.92815e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2029 -4.64214e-02  4.95913e-03  5.38324e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2030 -3.33481e-02  1.79534e-02  6.67512e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2031 -3.67441e-02  1.45277e-02  6.32974e-02  TRUE
+      sea_pmedesfh_lag6   2027  9.37476e+05  9.51470e+05  9.65022e+05  TRUE
+      sea_pmedesfh_lag6   2028  8.81318e+05  9.41615e+05  1.00284e+06  TRUE
+      sea_pmedesfh_lag6   2029  8.46155e+05  9.51646e+05  1.06422e+06  TRUE
+      sea_pmedesfh_lag6   2030  8.18814e+05  9.69361e+05  1.13823e+06  TRUE
+      sea_pmedesfh_lag6   2031  7.88245e+05  9.82283e+05  1.21107e+06  TRUE
+  sea_pmedesfh_lag6_yoy   2027 -5.15630e-02 -3.67466e-02 -2.26035e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2028 -6.17726e-02 -1.04108e-02  3.84443e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2029 -4.07166e-02  1.05963e-02  5.94050e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2030 -3.28456e-02  1.84439e-02  6.72304e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2031 -3.80480e-02  1.32425e-02  6.20300e-02  TRUE
+ used_by_models splits_crossed_minus splits_crossed_plus
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+           TRUE                    0                   0
+           TRUE                   16                   3
+           TRUE                    3                  14
+           TRUE                    3                  17
+           TRUE                    3                  17
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+           TRUE                    1                   0
+           TRUE                   28                  23
+           TRUE                   33                  69
+           TRUE                   33                  99
+           TRUE                   33                  69
+
+  e3  level  models, growth shock : FAIL
+ tax_yr total_av_minus5 total_av_base total_av_plus5 pct_minus5_vs_base
+   2026         168.694       168.694        168.694              0.000
+   2027         167.269       167.269        167.269              0.000
+   2028         174.467       174.879        174.680             -0.236
+   2029         181.195       182.016        181.668             -0.451
+   2030         189.300       190.284        189.957             -0.517
+   2031         197.877       199.028        198.725             -0.578
+ pct_plus5_vs_base
+             0.000
+             0.000
+            -0.114
+            -0.191
+            -0.172
+            -0.152
+
+    feature check (Step 6 inputs; moved = differs from base; splits_crossed = booster thresholds the shocked value crosses):
+                feature tax_yr       minus5         base        plus5 moved
+     sea_pmedesfh_lag12   2027  9.52313e+05  9.59310e+05  9.66086e+05  TRUE
+     sea_pmedesfh_lag12   2028  8.96322e+05  9.45410e+05  9.94793e+05  TRUE
+     sea_pmedesfh_lag12   2029  8.55665e+05  9.50110e+05  1.04981e+06  TRUE
+     sea_pmedesfh_lag12   2030  8.27601e+05  9.67321e+05  1.12228e+06  TRUE
+     sea_pmedesfh_lag12   2031  7.97743e+05  9.81477e+05  1.19561e+06  TRUE
+ sea_pmedesfh_lag12_yoy   2027 -3.71768e-02 -2.98566e-02 -2.28178e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2028 -6.05935e-02 -1.45956e-02  2.92815e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2029 -4.64214e-02  4.95913e-03  5.38324e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2030 -3.33481e-02  1.79534e-02  6.67512e-02  TRUE
+ sea_pmedesfh_lag12_yoy   2031 -3.67441e-02  1.45277e-02  6.32974e-02  TRUE
+      sea_pmedesfh_lag6   2027  9.37476e+05  9.51470e+05  9.65022e+05  TRUE
+      sea_pmedesfh_lag6   2028  8.81318e+05  9.41615e+05  1.00284e+06  TRUE
+      sea_pmedesfh_lag6   2029  8.46155e+05  9.51646e+05  1.06422e+06  TRUE
+      sea_pmedesfh_lag6   2030  8.18814e+05  9.69361e+05  1.13823e+06  TRUE
+      sea_pmedesfh_lag6   2031  7.88245e+05  9.82283e+05  1.21107e+06  TRUE
+  sea_pmedesfh_lag6_yoy   2027 -5.15630e-02 -3.67466e-02 -2.26035e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2028 -6.17726e-02 -1.04108e-02  3.84443e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2029 -4.07166e-02  1.05963e-02  5.94050e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2030 -3.28456e-02  1.84439e-02  6.72304e-02  TRUE
+  sea_pmedesfh_lag6_yoy   2031 -3.80480e-02  1.32425e-02  6.20300e-02  TRUE
+ used_by_models splits_crossed_minus splits_crossed_plus
+           TRUE                    0                  27
+           TRUE                   53                  27
+           TRUE                   87                  27
+           TRUE                  114                   0
+           TRUE                  131                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+           TRUE                    0                   0
+           TRUE                   22                   7
+           TRUE                   22                   7
+           TRUE                   34                   0
+           TRUE                   48                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+          FALSE                    0                   0
+
+
+RESIDENTIAL TOTAL AV BY MODE ($B; pessimistic <= baseline in 2028-2031?)
+------------------------------------------------------------------------
+  level:
+Key: <tax_yr>
+ tax_yr baseline optimistic pessimistic pes_le_base
+  <num>    <num>      <num>       <num>      <lgcl>
+   2026  168.694    168.694     168.694        TRUE
+   2027  167.269    167.269     167.269        TRUE
+   2028  174.879    173.530     162.781        TRUE
+   2029  182.016    180.760     169.459        TRUE
+   2030  190.284    189.515     176.309        TRUE
+   2031  199.028    198.720     184.138        TRUE
+
+  growth:
+Key: <tax_yr>
+ tax_yr baseline optimistic pessimistic pes_le_base
+  <num>    <num>      <num>       <num>      <lgcl>
+   2026  168.694    168.694     168.694        TRUE
+   2027  167.269    167.269     167.269        TRUE
+   2028  169.909    168.799     162.219        TRUE
+   2029  174.830    173.747     167.237        TRUE
+   2030  177.965    180.021     172.449        TRUE
+   2031  184.246    189.569     178.455        TRUE
+
+TY2027 ANCHORING COUNTS (residential)
+------------------------------------------------------------------------
+  level:
+ land_actual impr_actual land_delta impr_delta    scenario
+       <int>       <int>      <int>      <int>      <char>
+      166330      160530          0          0    baseline
+      166330      160530          0          0  optimistic
+      166330      160530          0          0 pessimistic
+
+  growth:
+ land_actual impr_actual land_delta impr_delta    scenario
+       <int>       <int>      <int>      <int>      <char>
+      166330      160530          0          0    baseline
+      166330      160530          0          0  optimistic
+      166330      160530          0          0 pessimistic
+
+DECISION RULE (NWMLS_GROWTH_DECISION.md)
+------------------------------------------------------------------------
+  1. Sensitivity, growth shock (growth models)  : PASS   [level models: FAIL | original level shock: growth n/a, level FAIL]
+  2. Scenarios (growth pes <= base, 2028-2031)  : PASS   [level: PASS]
+  3. CV (growth <= level + 3%, land and impr)   : PASS   [lgb_land_delta_cv -1.34%, lgb_impr_delta_cv 0.56%]
+  4. Clean run (vs all level logs incl. s0)      : PASS
+       growth steps d/f1/f2 all ok: PASS | NA counts = level: PASS | TY2027 anchoring = level: PASS | new warning lines: 0
+
+RULE (amended 2026-10-11): MET - ship growth
+
+Optimistic vs baseline is not judged (optimistic NWMLS price input is below baseline).
