@@ -63,6 +63,11 @@ if (!file.exists(file.path(.ov_root, "scripts", "ml", "main_ml.R")))
        ".  Open the project (or setwd) at the repo root first.")
 
 OV_ROOT    <- .ov_root
+# normalizePath() leaves a UNC root as "\\server/share/..." on Windows.  Use
+# forward slashes throughout (R reads "//server/share/..." as UNC); paths
+# are also escaped with encodeString() wherever they are written into a
+# step script (an unescaped "\\" there parses as one backslash).
+if (.Platform[["OS.type"]] == "windows") OV_ROOT <- gsub("\\", "/", OV_ROOT, fixed = TRUE)
 OV_LOG_DIR <- file.path(OV_ROOT, "data", "outputs_nwmls_growth", "logs")
 OV_RSCRIPT <- file.path(R.home("bin"), "Rscript")
 dir.create(file.path(OV_LOG_DIR, "steps"), recursive = TRUE, showWarnings = FALSE)
@@ -291,13 +296,13 @@ ov_write_step <- function(s) {
   f   <- file.path(OV_LOG_DIR, "steps", paste0(s[["id"]], ".R"))
   log <- file.path(OV_LOG_DIR, paste0(s[["id"]], ".log"))
   body <- paste0(
-    '.log <- file("', log, '", open = "wt")\n',
+    '.log <- file(', encodeString(log, quote = '"'), ', open = "wt")\n',
     'sink(.log); sink(.log, type = "message")\n',
     'cat("== step ', s[["id"]], ': ', s[["title"]], '\\n== started ", format(Sys.time()), "\\n")\n',
     '.ok <- tryCatch({\n',
-    '  setwd("', OV_ROOT, '")\n',
+    '  setwd(', encodeString(OV_ROOT, quote = '"'), ')\n',
     '  options(warn = 1)\n',
-    '  LOG_DIR <- "', OV_LOG_DIR, '"\n',
+    '  LOG_DIR <- ', encodeString(OV_LOG_DIR, quote = '"'), '\n',
     if (!isTRUE(s[["always"]])) PRE else "",
     s[["code"]], '\n',
     '  TRUE\n',
