@@ -30,6 +30,19 @@
 #
 # Nothing here trains commercial or condo models or touches data/nwmls,
 # data/oerf or data/kca.
+#
+# Options (set before sourcing; unset = everything, as above):
+#   OVERNIGHT_ONLY <- c("a", "d", ...)   run only these step ids, in the order
+#       above.  A dependency that is not selected counts as done in an
+#       earlier run (its earlier status is kept in status.csv).  Logs and
+#       result files of the selected steps are moved to logs/previous/ first.
+#   OVERNIGHT_D_REUSE_MODELS <- c(land = "20261010_024648",
+#                                 impr = "20261010_025916")
+#       step d does not retrain: it checks that the newest growth models in
+#       data/model_nwmls_growth carry these stamps and are stamped "growth",
+#       then runs the growth baseline forecast with them (forecast only if
+#       the growth extended panel is already cached).
+#   OVERNIGHT_DRY_RUN <- TRUE   write and parse the step scripts, run nothing.
 ###############################################################################
 
 # ---- where am I --------------------------------------------------------------
@@ -77,6 +90,57 @@ anchor_counts <- function(cache_dir, scenario, yr = 2027L) {
              total_na    = sum(is.na(x[["total_assessed_filled"]])))
 }
 '
+
+# Step d: retrain, or reuse named growth models (OVERNIGHT_D_REUSE_MODELS).
+D_REUSE <- get0("OVERNIGHT_D_REUSE_MODELS", ifnotfound = NULL)
+if (is.null(D_REUSE)) {
+  D_TITLE <- "growth baseline residential retrain"
+  D_CODE  <- '
+do.call(run_main_ml, c(res_args("baseline", "growth", train = TRUE), G))
+ac <- anchor_counts(G[["cache_dir"]], "baseline"); print(ac)
+'
+} else {
+  if (!is.character(D_REUSE) || !setequal(names(D_REUSE), c("land", "impr")) ||
+      !all(grepl("^[0-9]{8}_[0-9]{6}$", D_REUSE)))
+    stop("OVERNIGHT_D_REUSE_MODELS must be c(land = \"YYYYMMDD_HHMMSS\", ",
+         "impr = \"YYYYMMDD_HHMMSS\")")
+  D_TITLE <- paste0("growth baseline residential, reusing models land ",
+                    D_REUSE[["land"]], " / impr ", D_REUSE[["impr"]])
+  D_CODE  <- sprintf('
+want <- c(land = "%s", impr = "%s")
+md <- G[["model_dir"]]
+newest <- function(prefix) {
+  f <- list.files(md, pattern = paste0("^", prefix, "_.*[.]rds$"), full.names = TRUE)
+  if (!length(f)) stop("step d reuse: no ", prefix, "_* in ", md)
+  basename(f[which.max(file.info(f)[["mtime"]])])
+}
+chk <- c(lgb_land_delta_cv = "land", dv_land_delta = "land",
+         lgb_impr_delta_cv = "impr", dv_impr_delta = "impr")
+for (p in names(chk)) {
+  got <- newest(p)
+  exp <- paste0(p, "_", want[[chk[[p]]]], ".rds")
+  message("  reuse: newest ", p, " = ", got)
+  if (got != exp)
+    stop("step d reuse: newest ", p, " in ", md, " is ", got, ", expected ", exp,
+         " - move the newer file aside or update OVERNIGHT_D_REUSE_MODELS")
+}
+for (k in names(want)) {
+  m <- readRDS(file.path(md, paste0("lgb_", k, "_delta_cv_", want[[k]], ".rds")))
+  if (nwmls_model_mode(m) != "growth")
+    stop("step d reuse: lgb_", k, "_delta_cv_", want[[k]], " is stamped ",
+         nwmls_model_mode(m), ", not growth")
+}
+args <- res_args("baseline", "growth", train = FALSE)
+ext <- file.path(G[["cache_dir"]], paste0("panel_tbl_", CFG[["forecast_start"]], "_",
+                 CFG[["forecast_end"]], "_inputs_baseline_res.rds"))
+if (file.exists(ext)) {
+  args[["forecast_only"]] <- TRUE; args[["extend_replicate"]] <- FALSE
+  message("  reusing the cached growth extended panel ", basename(ext), " (forecast only)")
+} else message("  no cached growth extended panel - extending first")
+do.call(run_main_ml, c(args, G))
+ac <- anchor_counts(G[["cache_dir"]], "baseline"); print(ac)
+', D_REUSE[["land"]], D_REUSE[["impr"]])
+}
 
 STEPS <- list(
   list(id = "s0", title = "NWMLS forecast caches from the newest vintage", deps = character(0), code = '
@@ -132,10 +196,7 @@ if (dir.exists(dst) && length(list.files(dst))) {
 }
 source(file.path("ad_hoc", "stage_nwmls_growth.R"))
 '),
-  list(id = "d", title = "growth baseline residential retrain", deps = "c", code = '
-do.call(run_main_ml, c(res_args("baseline", "growth", train = TRUE), G))
-ac <- anchor_counts(G[["cache_dir"]], "baseline"); print(ac)
-'),
+  list(id = "d", title = D_TITLE, deps = "c", code = D_CODE),
   list(id = "e1", title = "sensitivity, level models", deps = "a", code = '
 NWMLS_SENS_DEFINE_ONLY <- TRUE
 source(file.path("ad_hoc", "nwmls_sensitivity.R"))
@@ -191,6 +252,17 @@ STEPS[[length(STEPS) + 1L]] <- list(
 # (scripts/ml/test_overnight_runner.R).  Never set in production.
 if (exists("OVERNIGHT_STEPS_OVERRIDE")) STEPS <- OVERNIGHT_STEPS_OVERRIDE
 
+# Subset (OVERNIGHT_ONLY)
+OV_IDS  <- vapply(STEPS, `[[`, "", "id")
+OV_ONLY <- get0("OVERNIGHT_ONLY", ifnotfound = NULL)
+if (!is.null(OV_ONLY)) {
+  .unk <- setdiff(OV_ONLY, OV_IDS)
+  if (length(.unk))
+    stop("OVERNIGHT_ONLY: unknown step id(s) ", paste(.unk, collapse = ", "),
+         ".  Valid: ", paste(OV_IDS, collapse = ", "))
+}
+OV_SELECTED <- if (is.null(OV_ONLY)) OV_IDS else OV_IDS[OV_IDS %in% OV_ONLY]
+
 # ---- runner ------------------------------------------------------------------------
 ov_write_step <- function(s) {
   f   <- file.path(OV_LOG_DIR, "steps", paste0(s[["id"]], ".R"))
@@ -224,27 +296,56 @@ if (isTRUE(get0("OVERNIGHT_DRY_RUN", ifnotfound = FALSE))) {
   for (s in STEPS) {
     w <- ov_write_step(s)
     invisible(parse(w[["script"]]))
-    cat(sprintf("  %-14s deps: %-8s %s\n", s[["id"]],
+    cat(sprintf("  %-14s deps: %-8s %s%s\n", s[["id"]],
                 if (length(s[["deps"]])) paste(s[["deps"]], collapse = ",") else "-",
-                s[["title"]]))
+                s[["title"]],
+                if (s[["id"]] %in% OV_SELECTED) "" else "   [not selected]"))
   }
   cat("Dry run: ", length(STEPS), " step scripts written to ",
       file.path(OV_LOG_DIR, "steps"), " and parsed OK. Nothing was run.\n", sep = "")
 } else {
 
 status_file <- file.path(OV_LOG_DIR, "status.csv")
-status <- data.frame(id = vapply(STEPS, `[[`, "", "id"),
+prior <- if (!is.null(OV_ONLY) && file.exists(status_file))
+  tryCatch(read.csv(status_file, stringsAsFactors = FALSE), error = function(e) NULL) else NULL
+status <- data.frame(id = OV_IDS,
                      title = vapply(STEPS, `[[`, "", "title"),
                      deps = vapply(STEPS, function(s) paste(s[["deps"]], collapse = " "), ""),
                      status = "pending", started = NA_character_,
                      elapsed_min = NA_real_, stringsAsFactors = FALSE)
+for (k in which(!OV_IDS %in% OV_SELECTED)) {
+  j <- if (is.null(prior)) NA_integer_ else match(OV_IDS[k], prior[["id"]])
+  ps <- if (is.na(j)) "n/a" else sub("^earlier run: ", "", prior[["status"]][j])
+  status[k, "status"] <- paste0("earlier run: ", ps)
+  if (!is.na(j)) {
+    status[k, "started"]     <- prior[["started"]][j]
+    status[k, "elapsed_min"] <- prior[["elapsed_min"]][j]
+  }
+}
 write.csv(status, status_file, row.names = FALSE)
+
+# Selected steps start clean: their previous log / result / stderr files are
+# moved to logs/previous/ so nothing stale is read by the summary.
+if (!is.null(OV_ONLY)) {
+  prev_dir <- file.path(OV_LOG_DIR, "previous")
+  dir.create(prev_dir, showWarnings = FALSE)
+  stamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+  for (id in OV_SELECTED) for (f in paste0(id, c(".log", "_result.rds", "_stderr.txt"))) {
+    src <- file.path(OV_LOG_DIR, f)
+    if (file.exists(src)) file.rename(src, file.path(prev_dir, paste0(stamp, "_", f)))
+  }
+  cat("OVERNIGHT_ONLY: running ", paste(OV_SELECTED, collapse = ", "),
+      "; earlier logs of these steps moved to ", prev_dir, "\n", sep = "")
+}
 
 cat("overnight_monday.R: ", nrow(status), " steps, logs in ", OV_LOG_DIR, "\n", sep = "")
 t_all <- Sys.time()
 for (k in seq_along(STEPS)) {
   s <- STEPS[[k]]
-  bad <- s[["deps"]][status[["status"]][match(s[["deps"]], status[["id"]])] != "ok"]
+  if (!s[["id"]] %in% OV_SELECTED) next
+  # a dependency that was not selected this time counts as done earlier
+  dsel <- s[["deps"]][s[["deps"]] %in% OV_SELECTED]
+  bad <- dsel[status[["status"]][match(dsel, status[["id"]])] != "ok"]
   if (length(bad)) {
     status[k, "status"] <- paste0("skipped (needs ", paste(bad, collapse = ", "), ")")
     cat(format(Sys.time(), "%H:%M"), " ", s[["id"]], " SKIPPED - failed/skipped dependency: ",
