@@ -1,44 +1,1799 @@
-> setwd("Z:/AV ML Model Oct")
-> OVERNIGHT_ONLY <- c("a","g1","g2","e1","d","e2","f1","f2","i")
-> source("ad_hoc/overnight_monday.R")
-OVERNIGHT_ONLY: running a, d, e1, e2, f1, f2, g1, g2, i; earlier logs of these steps moved to Z:/AV ML Model Oct/data/outputs_nwmls_growth/logs/previous
-overnight_monday.R: 18 steps, logs in Z:/AV ML Model Oct/data/outputs_nwmls_growth/logs
-17:23 a start: level baseline residential (TY2027 anchoring)
-17:40 a ok (16.3 min)
-17:40 d start: growth baseline residential retrain
-18:32 d ok (52.8 min)
-18:32 e1 start: sensitivity, level models
-18:56 e1 ok (23.6 min)
-18:56 e2 start: sensitivity, growth models
-19:22 e2 ok (25.8 min)
-19:22 f1 start: growth optimistic residential
-19:41 f1 ok (19.6 min)
-19:41 f2 start: growth pessimistic residential
-19:58 f2 ok (16.9 min)
-19:58 g1 start: level optimistic residential
-20:15 g1 ok (16.1 min)
-20:15 g2 start: level pessimistic residential
-20:31 g2 ok (16.2 min)
-20:31 i start: AB_SUMMARY.txt
-20:35 i ok (4.3 min)
+> 
+> # ── Configuration ──────────────────────────────────────────────────────────────
+> 
+> # Realization rate: fraction of construction sales tax that converts to AV
+> realization_rate <- 0.47
+> 
+> # Certified new construction values (from KC worksheet)
+> # Update these when new certified figures are available
+> cert_new_construction <- tibble(
++   tax_year = c("2025", "2026"),
++   baseline    = c(3975729781, 4511865685),
++   optimistic  = c(3975729781, 4511865685),
++   pessimistic = c(3975729781, 4511865685)
++ )
+> 
+> # ── 1. Import Construction Sales Tax Forecast ─────────────────────────────────
+> 
+> message("Importing construction sales tax forecast...")
+Importing construction sales tax forecast...
+> 
+> ## Read the TRS construction file
+> ## Structure: columns E-J around rows 185-211 contain the quarterly forecast
+> ## Column layout: quarter | ... | baseline | pessimistic | optimistic
+> ## Pre-forecast quarters (actuals) are in column H only
+> 
+> trs_raw <- read_excel(
++   here("data", "costar", "2026-10_trs_construction.xlsx"),
++   sheet = "TRS CON"
++ )
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...3`
+• `` -> `...4`
+• `` -> `...5`
+• `` -> `...7`
+• `` -> `...9`
+• `` -> `...10`
+• `` -> `...11`
+• `` -> `...12`
+• `` -> `...13`
+> 
+> ## Extract the quarterly forecast data from the obligation quarter columns
+> ## The data lives in columns E (quarter label) and H-J (baseline/pessimistic/optimistic)
+> ## We need to find where the forecast section starts
+> 
+> # Read using cell references matching the structure we found
+> # Actuals: column E = quarter, column H = value (rows ~98 to 185)
+> # Forecast: column E = quarter, columns H/I/J = baseline/pessimistic/optimistic (rows ~188 to 211)
+> 
+> # Strategy: read column E and H-J from the full sheet, filter to relevant quarters
+> trs_full <- read_excel(
++   here("data", "CoStar and SPG", "2026-07_trs_construction.xlsx"),
++   sheet = "TRS CON",
++   col_names = FALSE
++ )
+Error: `path` does not exist: ‘\\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/CoStar and SPG/2026-07_trs_construction.xlsx’
 
-All steps done in 3.19 h.  Summary: Z:/AV ML Model Oct/data/outputs_nwmls_growth/AB_SUMMARY.txt
-                    id              status elapsed_min
-1                   s0     earlier run: ok         0.1
-2                    a                  ok        16.3
-3                    b     earlier run: ok         2.1
-4                    c     earlier run: ok         0.3
-5                    d                  ok        52.8
-6                   e1                  ok        23.6
-7                   e2                  ok        25.8
-8                   f1                  ok        19.6
-9                   f2                  ok        16.9
-10                  g1                  ok        16.1
-11                  g2                  ok        16.2
-12      h_com_baseline earlier run: FAILED         1.2
-13    h_condo_baseline earlier run: FAILED         1.1
-14    h_com_optimistic earlier run: FAILED         1.1
-15  h_condo_optimistic earlier run: FAILED         1.1
-16   h_com_pessimistic earlier run: FAILED         1.2
-17 h_condo_pessimistic earlier run: FAILED         1.3
-18                   i                  ok         4.3
+> source("//ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/scripts/05_new_construction_forecast.R", echo = TRUE)
+
+> ####  New Construction Forecast
+> ####  Author: Sean Thompson (OERF)
+> ####
+> ####  This script forecasts new construction AV based on construction  .... [TRUNCATED] 
+
+> library(readxl)
+
+> library(here)
+
+> # ── Configuration ──────────────────────────────────────────────────────────────
+> 
+> # Realization rate: fraction of construction sales tax that c .... [TRUNCATED] 
+
+> # Certified new construction values (from KC worksheet)
+> # Update these when new certified figures are available
+> cert_new_construction <- tibble( .... [TRUNCATED] 
+
+> # ── 1. Import Construction Sales Tax Forecast ─────────────────────────────────
+> 
+> message("Importing construction sales tax forecast...")
+Importing construction sales tax forecast...
+
+> ## Read the TRS construction file
+> ## Structure: columns E-J around rows 185-211 contain the quarterly forecast
+> ## Column layout: quarter | ... | .... [TRUNCATED] 
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...3`
+• `` -> `...4`
+• `` -> `...5`
+• `` -> `...7`
+• `` -> `...9`
+• `` -> `...10`
+• `` -> `...11`
+• `` -> `...12`
+• `` -> `...13`
+
+> ## Extract the quarterly forecast data from the obligation quarter columns
+> ## The data lives in columns E (quarter label) and H-J (baseline/pessim .... [TRUNCATED] 
+Error: `path` does not exist: ‘\\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/CoStar and SPG/2026-10_trs_construction.xlsx’
+
+> ####  New Construction Forecast
+> ####  Author: Sean Thompson (OERF)
+> ####
+> ####  This script forecasts new construction AV based on construction sales tax data.
+> ####  Logic from the old model:
+> ####    - Import quarterly TRS construction sales tax forecast (baseline/pessimistic/optimistic)
+> ####    - Apply a 6-quarter lag: for each tax year, sum the 4 quarters of lagged sales
+> ####      (Q3 and Q4 of two years prior + Q1 and Q2 of one year prior)
+> ####    - Apply a realization rate (47%) to convert sales tax to AV
+> ####    - Stub in certified new construction for 2025 and 2026
+> ####    - Relevel forecast scenarios off the certified 2026 base using growth multiples
+> ####
+> ####  Output: tax_year | baseline | optimistic | pessimistic
+> 
+> library(tidyverse)
+> library(readxl)
+> library(here)
+> 
+> # ── Configuration ──────────────────────────────────────────────────────────────
+> 
+> # Realization rate: fraction of construction sales tax that converts to AV
+> realization_rate <- 0.47
+> 
+> # Certified new construction values (from KC worksheet)
+> # Update these when new certified figures are available
+> cert_new_construction <- tibble(
++   tax_year = c("2025", "2026"),
++   baseline    = c(3975729781, 4511865685),
++   optimistic  = c(3975729781, 4511865685),
++   pessimistic = c(3975729781, 4511865685)
++ )
+> 
+> # ── 1. Import Construction Sales Tax Forecast ─────────────────────────────────
+> 
+> message("Importing construction sales tax forecast...")
+Importing construction sales tax forecast...
+> 
+> ## Read the TRS construction file
+> ## Structure: columns E-J around rows 185-211 contain the quarterly forecast
+> ## Column layout: quarter | ... | baseline | pessimistic | optimistic
+> ## Pre-forecast quarters (actuals) are in column H only
+> 
+> trs_raw <- read_excel(
++   here("data", "costar", "2026-10_trs_construction.xlsx"),
++   sheet = "TRS CON"
++ )
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...3`
+• `` -> `...4`
+• `` -> `...5`
+• `` -> `...7`
+• `` -> `...9`
+• `` -> `...10`
+• `` -> `...11`
+• `` -> `...12`
+• `` -> `...13`
+> 
+> ## Extract the quarterly forecast data from the obligation quarter columns
+> ## The data lives in columns E (quarter label) and H-J (baseline/pessimistic/optimistic)
+> ## We need to find where the forecast section starts
+> 
+> # Read using cell references matching the structure we found
+> # Actuals: column E = quarter, column H = value (rows ~98 to 185)
+> # Forecast: column E = quarter, columns H/I/J = baseline/pessimistic/optimistic (rows ~188 to 211)
+> 
+> # Strategy: read column E and H-J from the full sheet, filter to relevant quarters
+> trs_full <- read_excel(
++   here("data", "costar", "2026-10_trs_construction.xlsx"),
++   sheet = "TRS CON",
++   col_names = FALSE
++ )
+New names:                                                                                                                                                                                                          
+• `` -> `...1`
+• `` -> `...2`
+• `` -> `...3`
+• `` -> `...4`
+• `` -> `...5`
+• `` -> `...6`
+• `` -> `...7`
+• `` -> `...8`
+• `` -> `...9`
+• `` -> `...10`
+• `` -> `...11`
+• `` -> `...12`
+• `` -> `...13`
+> 
+> ## Identify the quarterly obligation data
+> ## Column E (5) has quarter labels like "2024Q4", "2025Q1", etc.
+> ## Column H (8) has values for actuals and baseline forecast
+> ## Columns I (9) and J (10) have pessimistic and optimistic for forecast rows
+> 
+> quarter_data <- trs_full %>%
++   select(quarter = 5, baseline = 8, pessimistic = 9, optimistic = 10) %>%
++   filter(!is.na(quarter), str_detect(as.character(quarter), "^\\d{4}Q[1-4]$")) %>%
++   mutate(
++     quarter = as.character(quarter),
++     baseline = as.numeric(baseline),
++     pessimistic = as.numeric(pessimistic),
++     optimistic = as.numeric(optimistic),
++     # Forecast rows are the ones where the workbook populates the scenario
++     # columns (I is NA for actuals).  For PRE-forecast rows, force BOTH
++     # scenario columns to baseline — column J carries a ~1.0 ratio (not a
++     # level) in the actuals region, which is non-NA and therefore survived
++     # the old is.na() backfill, deflating the optimistic lagged sums by
++     # ~1000x and blowing up the relevel multiplier (mult_2027 ~ 960x).
++     is_forecast = !is.na(pessimistic),
++     pessimistic = if_else(is_forecast, pessimistic, baseline),
++     optimistic  = if_else(is_forecast, optimistic,  baseline)
++   )
+> 
+> ## Guard: scenario levels should be the same order of magnitude as baseline
+> ## in every quarter.  A ratio/index or unit mismatch shows up here first.
+> bad_q <- quarter_data %>%
++   filter(baseline > 0,
++          optimistic / baseline < 0.5 | optimistic / baseline > 2 |
++          pessimistic / baseline < 0.5 | pessimistic / baseline > 2)
+> if (nrow(bad_q) > 0) {
++   print(bad_q)
++   stop("Scenario columns out of range vs baseline for the quarters above — ",
++        "check TRS CON column layout (E/H/I/J) before proceeding.")
++ }
+> quarter_data <- quarter_data %>% select(-is_forecast)
+> 
+> message("  Quarters found: ", nrow(quarter_data))
+  Quarters found: 208
+> message("  Range: ", min(quarter_data$quarter), " to ", max(quarter_data$quarter))
+  Range: 1980Q1 to 2031Q4
+> 
+> # ── 2. Stub in Recent Actuals ────────────────────────────────────────────────
+> 
+> ## The old script manually stubbed in recent actual quarters before the forecast.
+> ## These should already be in the data. Verify we have the quarters we need:
+> needed_quarters <- c("2024Q3", "2024Q4", "2025Q1", "2025Q2")
+> missing <- setdiff(needed_quarters, quarter_data$quarter)
+> if (length(missing) > 0) {
++   warning("Missing quarters in TRS data: ", paste(missing, collapse = ", "))
++ }
+> 
+> # ── 3. Compute Lagged New Construction ───────────────────────────────────────
+> 
+> message("Computing lagged new construction forecast...")
+Computing lagged new construction forecast...
+> 
+> ## For each tax year, new construction = sum of 4 quarters with a 6-quarter lag
+> ## Tax year N uses: Q3(N-2) + Q4(N-2) + Q1(N-1) + Q2(N-1)
+> ## Equivalently: the Q1 of each year triggers the sum of the preceding 4 quarters
+> ## offset by 2 (so lag 2 through lag 5 from each Q1)
+> 
+> new_con_long <- quarter_data %>%
++   pivot_longer(
++     cols = c(baseline, pessimistic, optimistic),
++     names_to = "scenario",
++     values_to = "value"
++   ) %>%
++   arrange(scenario, quarter) %>%
++   group_by(scenario) %>%
++   mutate(
++     # For each Q1, sum the values at lags 2, 3, 4, 5
++     new_con_forecast = if_else(
++       str_detect(quarter, "Q1"),
++       lag(value, 2) + lag(value, 3) + lag(value, 4) + lag(value, 5),
++       NA_real_
++     ),
++     tax_year = str_sub(quarter, 1, 4)
++   ) %>%
++   filter(!is.na(new_con_forecast)) %>%
++   group_by(tax_year, scenario) %>%
++   summarise(
++     new_con_forecast = sum(new_con_forecast * realization_rate * 1e6),
++     .groups = "drop"
++   )
+> 
+> new_con_wide <- new_con_long %>%
++   pivot_wider(names_from = scenario, values_from = new_con_forecast) %>%
++   filter(tax_year >= "2027")  # 2025 and 2026 use certified values
+> 
+> message("  Raw new construction forecast (post-lag, pre-rebase):")
+  Raw new construction forecast (post-lag, pre-rebase):
+> print(new_con_wide)
+# A tibble: 5 × 4
+  tax_year    baseline  optimistic pessimistic
+  <chr>          <dbl>       <dbl>       <dbl>
+1 2027     3540062349. 3540062349. 3540062349.
+2 2028     3609848622. 3637070941. 3429560215.
+3 2029     3652825451. 3725393712. 3175859936.
+4 2030     3767206470. 3902931377. 3175955837.
+5 2031     4001251108. 4179058488. 3496755613.
+> 
+> # ── 4. Relevel Off Certified Base ────────────────────────────────────────────
+> 
+> message("Releveling new construction forecast off certified 2026 base...")
+Releveling new construction forecast off certified 2026 base...
+> 
+> ## Compute growth multiples from the raw forecast
+> mult_tbl <- new_con_wide %>%
++   pivot_longer(-tax_year, names_to = "scenario", values_to = "value") %>%
++   arrange(scenario, tax_year) %>%
++   group_by(scenario) %>%
++   mutate(mult = value / lag(value)) %>%
++   ungroup() %>%
++   select(scenario, tax_year, mult)
+> 
+> ## Build the releveled series:
+> ## 2025 = certified, 2026 = certified, 2027+ = 2026_certified * cumulative multipliers
+> 
+> # Get all forecast years
+> all_years <- sort(unique(c("2025", "2026", new_con_wide$tax_year)))
+> scenarios <- c("baseline", "pessimistic", "optimistic")
+> 
+> skeleton <- expand_grid(
++   tax_year = all_years,
++   scenario = scenarios
++ )
+> 
+> cert_long <- cert_new_construction %>%
++   pivot_longer(-tax_year, names_to = "scenario", values_to = "cert_value")
+> 
+> cert_2025 <- cert_long %>%
++   filter(tax_year == "2025") %>%
++   select(scenario, y2025 = cert_value)
+> 
+> cert_2026 <- cert_long %>%
++   filter(tax_year == "2026") %>%
++   select(scenario, y2026 = cert_value)
+> 
+> releveled <- skeleton %>%
++   left_join(mult_tbl, by = c("scenario", "tax_year")) %>%
++   left_join(cert_2025, by = "scenario") %>%
++   left_join(cert_2026, by = "scenario") %>%
++   arrange(scenario, tax_year) %>%
++   group_by(scenario) %>%
++   mutate(
++     # For 2025 and 2026, mult factor = 1 (use certified directly)
++     # For 2027+, use the growth multiples from the raw forecast
++     mult_safe = case_when(
++       tax_year <= "2026" ~ 1,
++       TRUE ~ mult
++     )
++   )
+> 
+> ## For 2027, the first mult in mult_tbl is relative to the raw 2027/2026 ratio.
+> ## But since we've only got mults starting from 2028 (2027 has no lag in mult_tbl),
+> ## we need the actual 2027 value from the raw forecast and compute its ratio to raw 2026.
+> 
+> ## Get raw 2026 values to compute the 2027 multiplier
+> ## 2026 in the raw forecast = the Q1 2026 lagged sum (before filtering to >= 2027)
+> raw_2026 <- new_con_long %>%
++   filter(tax_year == "2026") %>%
++   select(scenario, raw_2026 = new_con_forecast)
+> 
+> raw_2027 <- new_con_long %>%
++   filter(tax_year == "2027") %>%
++   select(scenario, raw_2027 = new_con_forecast)
+> 
+> mult_2027 <- raw_2027 %>%
++   left_join(raw_2026, by = "scenario") %>%
++   mutate(mult = raw_2027 / raw_2026) %>%
++   select(scenario, mult)
+> 
+> ## Now chain multiply from the certified 2026 base
+> new_construction_forecast <- releveled %>%
++   left_join(mult_2027 %>% rename(mult_2027_val = mult), by = "scenario") %>%
++   mutate(
++     # Override the first forecast year mult with the raw ratio
++     mult_final = case_when(
++       tax_year == "2027" ~ mult_2027_val,
++       tax_year <= "2026" ~ 1,
++       TRUE ~ mult
++     ),
++     # Cumulative product from 2026 base
++     factor = cumprod(mult_final),
++     value = case_when(
++       tax_year == "2025" ~ y2025,
++       TRUE ~ y2026 * factor
++     )
++   ) %>%
++   ungroup() %>%
++   select(tax_year, scenario, value) %>%
++   pivot_wider(names_from = scenario, values_from = value) %>%
++   arrange(tax_year)
+> 
+> message("\n=== New Construction Forecast ===")
+
+=== New Construction Forecast ===
+> print(new_construction_forecast)
+# A tibble: 7 × 4
+  tax_year    baseline  optimistic pessimistic
+  <chr>          <dbl>       <dbl>       <dbl>
+1 2025     3975729781  3975729781  3975729781 
+2 2026     4511865685  4511865685  4511865685 
+3 2027     4420961510. 4420961510. 4420961510.
+4 2028     4508113204. 4542109448. 4282962336.
+5 2029     4561784266. 4652410208. 3966131992.
+6 2030     4704627536. 4874125847. 3966251757.
+7 2031     4996911183. 5218963652. 4366878448.
+> 
+> # ── 5. Write Out ──────────────────────────────────────────────────────────────
+> 
+> write_csv(
++   new_construction_forecast,
++   here(str_c("OERF_New_Construction_Forecast_", today(), ".csv"))
++ )
+>                                                                                                                                                                                                                   
+> message("New construction forecast written.")
+New construction forecast written.
+> # =============================================================================
+> # av_reconcile_certified.R
+> #
+> # Strategy:
+> #   1. Use ad_hoc historical shares (appraised AV by prop type) to split
+> #      certified totals into property-type components (2022-2026)
+> #   2. For forecast (2027-2031), apply growth rates from:
+> #      - ML res panel for Residential
+> #      - ML condo panel for Condo
+> #      - Aggregate commercial script for Commercial
+> #   3. Compound forward from the 2026 certified-based levels
+> #
+> # This produces a single continuous certified-anchored series per prop type.
+> # =============================================================================
+> 
+> library(tidyverse)
+> library(data.table)
+data.table 1.18.4 using 8 threads (see ?getDTthreads).  Latest news: r-datatable.com
+
+Attaching package: ‘data.table’
+
+The following objects are masked from ‘package:lubridate’:
+
+    hour, isoweek, isoyear, mday, minute, month, quarter, second, wday, week, yday, year
+
+The following objects are masked from ‘package:dplyr’:
+
+    between, first, last
+
+The following object is masked from ‘package:purrr’:
+
+    transpose
+
+The following object is masked from ‘package:base’:
+
+    %notin%
+> library(scales)
+
+Attaching package: ‘scales’
+
+The following object is masked from ‘package:purrr’:
+
+    discard
+
+The following object is masked from ‘package:readr’:
+
+    col_factor
+> library(here)
+> 
+> cache_dir <- here("data", "cache")
+> 
+> # ============================================================================
+> # 1. CERTIFIED AV TOTALS  +  PERSONAL PROPERTY LAYER
+> # ============================================================================
+> # BASIS: REGULAR LEVY (the levy base OERF forecasts — per A. Zhang
+> # 2026-07-31).  grand_total = citypersprop statistics-report series (incl.
+> # senior-exempt AV); cert_total = regular-levy basis, by source:
+> #   2022: ESTIMATED grand x (1 - 2023 senior-exempt share) — no letter in
+> #         hand; exemption was pre-expansion, so 2023's share is the proxy
+> #   2023: grand - $1,172,001,173 senior exempt (Nov 21 2022 certification;
+> #         letter's certified AV $307,774,003,816 is the same basis pre-BoE)
+> #   2024: EXACT $299,443,737,414 (Feb 1 2024 certified letter)
+> #   2025: $297,696,494,175 (line R, PRELIMINARY worksheet 09.26.2024 —
+> #         refine with the Feb 2025 certified letter when located)
+> #   2026: EXACT $306,466,960,900 (Feb 17 2026 certified letter; grand
+> #         $308,777,816,989, excess $304,130,513,509)
+> exempt_2023 <- 1172001173
+> share_2023  <- exempt_2023 / (307774003816 + exempt_2023)
+> 
+> certified_av <- tribble(
++   ~tax_yr, ~grand_total,  ~cert_total,
++   2022L,   276293453116,  276293453116 * (1 - share_2023),
++   2023L,   308874491598,  308874491598 - exempt_2023,
++   2024L,   301214631275,  299443737414,
++   2025L,   299963009621,  297696494175,
++   2026L,   308777816989,  306466960900
++ )
+> 
+> # PP layer (locally assessed + state public service + omitted), exact:
+> pp_layer <- tribble(
++   ~tax_yr, ~pp_av,
++   2022L,   7490457363,
++   2023L,   8542526282,
++   2024L,   8947018132,
++   2025L,   9073883825,
++   2026L,   9330922938
++ )
+> 
+> certified_av <- certified_av %>%
++   left_join(pp_layer, by = "tax_yr") %>%
++   mutate(cert_real = cert_total - pp_av)
+> 
+> message("=== Certificate decomposition ($B) ===")
+=== Certificate decomposition ($B) ===
+> print(certified_av %>%
++         mutate(grand = round(grand_total / 1e9, 2),
++                total = round(cert_total / 1e9, 2),
++                pp    = round(pp_av / 1e9, 2),
++                real  = round(cert_real / 1e9, 2)) %>%
++         select(tax_yr, grand, total, pp, real))
+# A tibble: 5 × 5
+  tax_yr grand total    pp  real
+   <int> <dbl> <dbl> <dbl> <dbl>
+1   2022  276.  275.  7.49  268.
+2   2023  309.  308.  8.54  299.
+3   2024  301.  299.  8.95  290.
+4   2025  300.  298.  9.07  289.
+5   2026  309.  306.  9.33  297.
+> 
+> # ============================================================================
+> # 2. HISTORICAL APPRAISED AV BY PROP TYPE (from ad_hoc.R)
+> #    Commercial = all prop_type C (Commercial + Apartment + Industrial)
+> # ============================================================================
+> hist_appraised <- tribble(
++   ~tax_yr, ~track,          ~appraised_b,
++   2022L,   "res",           136.44,
++   2022L,   "com",            99.12,
++   2022L,   "condo",          28.88,
++   2023L,   "res",           159.58,
++   2023L,   "com",           104.96,
++   2023L,   "condo",          30.76,
++   2024L,   "res",           147.84,
++   2024L,   "com",           105.44,
++   2024L,   "condo",          32.85,
++   2025L,   "res",           158.89,
++   2025L,   "com",            94.53,
++   2025L,   "condo",          30.94,
++   2026L,   "res",           165.53,
++   2026L,   "com",            94.79,
++   2026L,   "condo",          32.25
++ ) %>%
++   mutate(appraised_av = appraised_b * 1e9)
+> 
+> # Compute shares
+> hist_totals <- hist_appraised %>%
++   group_by(tax_yr) %>%
++   summarise(total_appraised = sum(appraised_av), .groups = "drop")
+> 
+> hist_shares <- hist_appraised %>%
++   left_join(hist_totals, by = "tax_yr") %>%
++   mutate(share = appraised_av / total_appraised)
+> 
+> message("=== Historical Appraised Shares ===")
+=== Historical Appraised Shares ===
+> hist_shares %>%
++   select(tax_yr, track, share) %>%
++   pivot_wider(names_from = track, values_from = share) %>%
++   mutate(across(c(res, com, condo), ~ round(.x, 4))) %>%
++   print()
+# A tibble: 5 × 4
+  tax_yr   res   com condo
+   <int> <dbl> <dbl> <dbl>
+1   2022 0.516 0.375 0.109
+2   2023 0.540 0.355 0.104
+3   2024 0.517 0.368 0.115
+4   2025 0.559 0.332 0.109
+5   2026 0.566 0.324 0.110
+> 
+> # Apply shares to the REAL PROPERTY portion of the certificate
+> cert_by_type <- hist_shares %>%
++   left_join(certified_av, by = "tax_yr") %>%
++   mutate(cert_av = cert_real * share) %>%
++   select(tax_yr, track, cert_av)
+> 
+> # Personal property rides along as its own track (no share split)
+> cert_by_type <- bind_rows(
++   cert_by_type,
++   certified_av %>% transmute(tax_yr, track = "pp", cert_av = pp_av))
+> 
+> message("\n=== Certified AV by Property Type ($B) ===")
+
+=== Certified AV by Property Type ($B) ===
+> cert_by_type %>%
++   mutate(cert_b = round(cert_av / 1e9, 2)) %>%
++   select(tax_yr, track, cert_b) %>%
++   pivot_wider(names_from = track, values_from = cert_b) %>%
++   print()
+# A tibble: 5 × 5
+  tax_yr   res   com condo    pp
+   <int> <dbl> <dbl> <dbl> <dbl>
+1   2022  138. 100.   29.2  7.49
+2   2023  162. 106.   31.2  8.54
+3   2024  150. 107.   33.4  8.95
+4   2025  161.  96.0  31.4  9.07
+5   2026  168.  96.3  32.8  9.33
+> 
+> # ============================================================================
+> # 3. FORECAST GROWTH RATES BY TRACK
+> # ============================================================================
+> message("\nLoading forecast growth rates...")
+
+Loading forecast growth rates...
+> 
+> # --- All tracks: MATCHED-PARCEL YoY growth from the ML forecast caches ---
+> # Growth for year Y is computed ONLY on parcels with positive AV in both
+> # Y-1 and Y.  This is the settled rebase methodology: unmatched total-sum
+> # growth is contaminated by coverage composition (condo 2026->2027 sums
+> # jump +205% purely because 22.6K observed units become 80K forecast
+> # units; com jumps ~+12% from retail/industrial/condo coverage entrants).
+> # Matched chains measure value growth, which is what gets compounded off
+> # the certified base.
+> load_matched_gyy <- function(track, scenario) {
++   fpath <- file.path(cache_dir,
++                      paste0("panel_tbl_2006_2031_forecasted_", scenario,
++                             "_", track, ".rds"))
++   if (!file.exists(fpath)) return(NULL)
++ 
++   dt <- as.data.table(readRDS(fpath))
++ 
++   # Same AV definition as the scen_tbl QA helper: observed value first,
++   # filled value second, model prediction last (forecast years carry the
++   # pred_* columns; observed years the appr_* columns).
++   vc <- intersect(c("appr_land_val", "appr_land_val_filled",
++                     "pred_appr_land_val"), names(dt))
++   ic <- intersect(c("appr_imps_val", "appr_imps_val_filled",
++                     "pred_appr_imps_val"), names(dt))
++   dt[, av := rowSums(cbind(
++       do.call(fcoalesce, lapply(vc, function(cn) as.numeric(dt[[cn]]))),
++       do.call(fcoalesce, lapply(ic, function(cn) as.numeric(dt[[cn]])))),
++       na.rm = TRUE)]
++   if ("pred_total_assessed" %in% names(dt))
++     dt[av == 0 & !is.na(pred_total_assessed),
++        av := as.numeric(pred_total_assessed)]   # com_other carry-forward
++ 
++   dt <- unique(dt[av > 0 & tax_yr >= 2026,
++                   .(parcel_id, tax_yr, av)],
++                by = c("parcel_id", "tax_yr"))
++ 
++   out <- lapply(2027:2031, function(yr) {
++     m <- merge(dt[tax_yr == yr - 1L, .(parcel_id, av0 = av)],
++                dt[tax_yr == yr,      .(parcel_id, av1 = av)],
++                by = "parcel_id")
++     if (nrow(m) == 0) return(NULL)
++     data.table(tax_yr = yr, track = track,
++                gyy = sum(m$av1) / sum(m$av0) - 1,
++                n_matched = nrow(m), scenario = scenario)
++   })
++   rbindlist(Filter(Negate(is.null), out))
++ }
+> 
+> res_gyy_bas <- load_matched_gyy("res", "baseline")
+> res_gyy_opt <- load_matched_gyy("res", "optimistic")
+> res_gyy_pes <- load_matched_gyy("res", "pessimistic")
+> 
+> message("  Res baseline growth rates:")
+  Res baseline growth rates:
+> if (!is.null(res_gyy_bas)) print(res_gyy_bas)
+   tax_yr  track          gyy n_matched scenario
+    <int> <char>        <num>     <int>   <char>
+1:   2027    res -0.008665101    166330 baseline
+2:   2028    res  0.045499653    166330 baseline
+3:   2029    res  0.040806870    166330 baseline
+4:   2030    res  0.045428672    166330 baseline
+5:   2031    res  0.045948656    166330 baseline
+> 
+> # --- Condo: matched-parcel (2027 chains off the 22.6K units with an
+> #     observed 2026 value; the 57K uncovered units inherit the same
+> #     growth via the certified-base compounding, which is the point) ---
+> condo_gyy_bas <- load_matched_gyy("condo", "baseline")
+> condo_gyy_opt <- load_matched_gyy("condo", "optimistic")
+> condo_gyy_pes <- load_matched_gyy("condo", "pessimistic")
+> 
+> message("  Condo baseline growth rates:")
+  Condo baseline growth rates:
+> if (!is.null(condo_gyy_bas)) print(condo_gyy_bas)
+   tax_yr  track        gyy n_matched scenario
+    <int> <char>      <num>     <int>   <char>
+1:   2027  condo 0.04565743     35771 baseline
+2:   2028  condo 0.04663497     97564 baseline
+3:   2029  condo 0.04809795     97564 baseline
+4:   2030  condo 0.05095919     97564 baseline
+5:   2031  condo 0.05119883     97564 baseline
+> 
+> # --- Condo: value-weighted KCA condo report rate (reference) ---------------
+> # The Assessor's condo area reports (area_report_actuals_<A>.rds, A = 2026 for
+> # the TY2027 roll) give a population % change per report, each covering a
+> # list of condo neighborhoods county-wide.  Weighted to Seattle: each report's
+> # rate x the TY2026 AV of the Seattle units in its neighborhoods, over the
+> # matched AV.  Printed as a reference for CONDO_2027_RATE below; never used
+> # unless you set it.
+> condo_report_weighted_rate <- function(cache_dir, assessment_yr = 2026L) {
++   ap <- file.path(cache_dir, paste0("area_report_actuals_", assessment_yr, ".rds"))
++   cp <- file.path(cache_dir, "panel_tbl_2006_2031_forecasted_baseline_condo.rds")
++   if (!file.exists(ap)) stop(basename(ap), " not in ", cache_dir)
++   if (!file.exists(cp)) stop(basename(cp), " not in ", cache_dir)
++   nkey <- function(x) {
++     x <- trimws(as.character(x)); x[x %in% c("", "NA", "0")] <- NA_character_
++     n <- suppressWarnings(as.numeric(x)); ifelse(is.na(n), x, as.character(n))
++   }
++   act <- as.data.table(readRDS(ap))
++   act <- act[prop_type == "condo" & basis == "population" &
++                is.finite(pct_change) & !is.na(nbhds) & nbhds != ""]
++   if (!nrow(act)) stop("no condo population rows in ", basename(ap))
++   act[, report := if ("report_id" %in% names(act)) report_id else source_file]
++   nb <- act[, .(nbhd = nkey(unlist(strsplit(nbhds, ",", fixed = TRUE)))),
++             by = .(report, area_name, pct_change)]
++   nb <- unique(nb, by = "nbhd")          # a neighborhood belongs to one report
++ 
++   # Seattle units, TY2026 AV (same definition as load_matched_gyy)
++   d <- as.data.table(readRDS(cp))[tax_yr == assessment_yr]
++   vc <- intersect(c("appr_land_val", "appr_land_val_filled", "pred_appr_land_val"), names(d))
++   ic <- intersect(c("appr_imps_val", "appr_imps_val_filled", "pred_appr_imps_val"), names(d))
++   d[, av := rowSums(cbind(
++     do.call(fcoalesce, lapply(vc, function(cn) as.numeric(d[[cn]]))),
++     do.call(fcoalesce, lapply(ic, function(cn) as.numeric(d[[cn]])))), na.rm = TRUE)]
++   d <- unique(d[av > 0], by = "parcel_id")
++ 
++   # Neighborhood: the panel column (or EXTR_Parcel SpecSubArea for condo
++   # complexes, joined on Major) that matches the most report neighborhoods.
++   cands <- grep("nbhd|neighbo|sub_?area|spec_?sub|condo.*(area|nbhd)", names(d),
++                 value = TRUE, ignore.case = TRUE, perl = TRUE)
++   opts <- lapply(setNames(cands, cands), function(cn) nkey(d[[cn]]))
++   kca <- sort(list.files(here("data", "kca"), pattern = "^EXTR_Parcel\\.csv$",
++                          recursive = TRUE, full.names = TRUE), decreasing = TRUE)
++   if (length(kca)) {
++     xp <- fread(kca[1], select = c("Major", "SpecArea", "SpecSubArea"),
++                 colClasses = "character", showProgress = FALSE)
++     xp <- xp[nkey(SpecArea) == "700",
++              .(nbhd = nkey(SpecSubArea)[1]), by = .(Major = sprintf("%06d", as.integer(Major)))]
++     maj <- substr(sprintf("%010s", gsub("-", "", d[["parcel_id"]])), 1, 6)
++     maj <- gsub(" ", "0", maj)
++     opts[[paste0("EXTR_Parcel SpecSubArea (", basename(dirname(kca[1])), ")")]] <-
++       xp[["nbhd"]][match(maj, xp[["Major"]])]
++   }
++   if (!length(opts)) stop("no condo neighborhood column in the panel and no EXTR_Parcel.csv")
++   score <- vapply(opts, function(v) sum(d[["av"]][v %in% nb[["nbhd"]]]), numeric(1))
++   best <- names(which.max(score))
++   if (max(score) <= 0) stop("no condo unit matches a report neighborhood")
++   d[, nbhd := opts[[best]]]
++   m <- merge(d[, .(nbhd, av)], nb, by = "nbhd")
++   tab <- m[, .(seattle_units = .N, seattle_av_2026 = sum(av)),
++            by = .(report, area_name, pct_change)][order(-seattle_av_2026)]
++   rate <- tab[, sum(pct_change * seattle_av_2026) / sum(seattle_av_2026)]
++   list(rate = rate, table = tab, source = best,
++        matched_av = sum(m[["av"]]), total_av = sum(d[["av"]]),
++        matched_units = nrow(m), total_units = nrow(d))
++ }
+> 
+> cw <- tryCatch(condo_report_weighted_rate(cache_dir), error = function(e) e)
+> if (inherits(cw, "error")) {
++   message("  (condo report rate not computed: ", conditionMessage(cw), ")")
++ } else {
++   message("\n=== KCA condo area reports (assessment 2026 -> TY2027), weighted by ",
++           "Seattle units' TY2026 AV ===")
++   message("  neighborhood source: ", cw[["source"]], " | matched ",
++           format(cw[["matched_units"]], big.mark = ","), " of ",
++           format(cw[["total_units"]], big.mark = ","), " units, ",
++           sprintf("%.1f%%", 100 * cw[["matched_av"]] / cw[["total_av"]]), " of AV")
++   print(cw[["table"]][, .(report, area_name, pct_change = sprintf("%+.2f%%", 100 * pct_change),
++                          seattle_units, seattle_av_2026_B = round(seattle_av_2026 / 1e9, 3))],
++         row.names = FALSE)
++   message(sprintf("  VALUE-WEIGHTED SEATTLE CONDO REPORT RATE: %+.4f%%  (CONDO_2027_RATE <- %.6f)",
++                   100 * cw[["rate"]], cw[["rate"]]))
++ }
+
+=== KCA condo area reports (assessment 2026 -> TY2027), weighted by Seattle units' TY2026 AV ===
+  neighborhood source: EXTR_Parcel SpecSubArea (2026-09-25) | matched 34,550 of 35,771 units, 90.1% of AV
+            report             area_name pct_change seattle_units seattle_av_2026_B
+            <char>                <char>     <char>         <int>             <num>
+ commercial/700_02      Downtown Seattle     -3.70%          7080             4.635
+ commercial/700_08 Northwest King County     -2.40%          9152             3.920
+ commercial/700_01          Capitol Hill     -5.70%          7475             3.637
+ commercial/700_03 Queen Anne / Magnolia     -2.80%          6862             3.462
+ commercial/700_07         South Seattle     -6.50%          3981             2.016
+  VALUE-WEIGHTED SEATTLE CONDO REPORT RATE: -3.9663%  (CONDO_2027_RATE <- -0.039663)
+> 
+> # --- Condo: optional 2027 growth override ----------------------------------
+> # NULL (default): condo 2027 growth = the matched-parcel ML rate above.
+> # Set (a fraction, e.g. -0.0512): replaces condo's 2027 growth in all three
+> # scenarios BEFORE the preliminary-roll calibration, which then scales condo
+> # with the other real-property tracks.  2028-2031 keep the ML rates.
+> CONDO_2027_RATE <- NULL
+> 
+> if (!is.null(CONDO_2027_RATE)) {
++   if (!is.numeric(CONDO_2027_RATE) || length(CONDO_2027_RATE) != 1L ||
++       !is.finite(CONDO_2027_RATE) || abs(CONDO_2027_RATE) > 0.5)
++     stop("CONDO_2027_RATE must be NULL or one growth rate as a fraction ",
++          "(e.g. -0.0512), |rate| <= 0.5")
++   ovr <- function(g, sc) {
++     if (is.null(g) || !nrow(g[tax_yr == 2027L]))
++       stop("CONDO_2027_RATE: no condo 2027 growth row for ", sc, " to override")
++     message(sprintf("  condo 2027 growth (%s): ML %+.4f%% -> CONDO_2027_RATE %+.4f%%",
++                     sc, 100 * g[tax_yr == 2027L, gyy], 100 * CONDO_2027_RATE))
++     g <- copy(g); g[tax_yr == 2027L, gyy := CONDO_2027_RATE]; g
++   }
++   condo_gyy_bas <- ovr(condo_gyy_bas, "baseline")
++   condo_gyy_opt <- ovr(condo_gyy_opt, "optimistic")
++   condo_gyy_pes <- ovr(condo_gyy_pes, "pessimistic")
++ }
+> 
+> # --- Commercial: matched-parcel from the COMBINED per-subgroup ML
+> #     forecast (panel_tbl_2006_2031_forecasted_<sc>_com.rds — the
+> #     rbind of apt/office/industrial/retail/hospitality/medical +
+> #     com_other written by run_main_ml).  The previous version of this
+> #     script read the legacy aggregate CoStar CSV, or fell back to
+> #     hardcoded rates; both predate the subgroup pipeline. ---
+> com_gyy_bas <- load_matched_gyy("com", "baseline")
+> com_gyy_opt <- load_matched_gyy("com", "optimistic")
+> com_gyy_pes <- load_matched_gyy("com", "pessimistic")
+> 
+> if (is.null(com_gyy_bas))
++   stop("Combined commercial forecast cache not found — run the three ",
++        "run_main_ml() scenario passes for prop_scope='com' first.")
+> 
+> # --- Personal property: econ-linked growth ------------------------------
+> # PP (business equipment & fixtures) tracks business activity.  Growth for
+> # 2027-2031 = PP_ECON_ELASTICITY x YoY growth of PP_ECON_DRIVER, read from
+> # the scenario econ caches (econ_fcst_2026_2031_<scenario>.rds, built by
+> # xx_econ_to_panel.R from the OERF workbook) — this is what makes PP
+> # scenario-differentiated.  On first run leave PP_ECON_DRIVER = NULL: the
+> # script lists the cache's numeric columns so you can pick one, and falls
+> # back to the exact historical CAGR (2022-2026: +5.65%/yr, from the
+> # citypersprop reports) meanwhile.  Elasticity default 1.0; tune if the
+> # chosen driver historically over/under-shoots PP growth.
+> PP_ECON_DRIVER     <- NULL   # e.g. an employment or taxable-sales column
+> PP_ECON_ELASTICITY <- 1.0
+> 
+> pp_hist_cagr <- (9330922938 / 7490457363)^(1 / 4) - 1  # 2022->2026
+> 
+> pp_gyy <- function(scenario_label) {
++   fallback <- function(msg) {
++     message("  \u26a0\ufe0f  PP growth fallback (", msg, ") — using 2022-2026 ",
++             "CAGR ", sprintf("%.2f%%", 100 * pp_hist_cagr), " for ",
++             scenario_label, " (scenario-invariant)")
++     data.table(tax_yr = 2027:2031, track = "pp", gyy = pp_hist_cagr,
++                n_matched = NA_integer_, scenario = scenario_label)
++   }
++   ep <- file.path(cache_dir,
++                   paste0("econ_fcst_2026_2031_", scenario_label, ".rds"))
++   if (!file.exists(ep)) return(fallback("econ cache missing"))
++   ec <- as.data.table(readRDS(ep))
++   yr_col <- intersect(c("tax_yr", "year", "yr"), names(ec))[1]
++   if (is.na(yr_col)) return(fallback("no year column in econ cache"))
++   if (is.null(PP_ECON_DRIVER)) {
++     num_cols <- setdiff(names(ec)[sapply(ec, is.numeric)], yr_col)
++     message("  PP_ECON_DRIVER not set — columns available in ",
++             basename(ep), ":\n    ",
++             paste(num_cols, collapse = "\n    "))
++     return(fallback("driver not configured"))
++   }
++   if (!PP_ECON_DRIVER %in% names(ec))
++     return(fallback(paste0("'", PP_ECON_DRIVER, "' not in cache")))
++   drv <- ec[, .(yr = as.integer(get(yr_col)),
++                 v  = as.numeric(get(PP_ECON_DRIVER)))]
++   drv <- drv[!is.na(v), .(v = mean(v)), by = yr][order(yr)]
++   drv[, g := v / shift(v) - 1]
++   out <- drv[yr %in% 2027:2031 & !is.na(g),
++              .(tax_yr = yr, track = "pp",
++                gyy = PP_ECON_ELASTICITY * g,
++                n_matched = NA_integer_, scenario = scenario_label)]
++   if (nrow(out) < 5)
++     return(fallback("driver lacks full 2027-2031 coverage"))
++   message("  PP growth (", scenario_label, "): ",
++           paste(sprintf("%d %+.2f%%", out$tax_yr, 100 * out$gyy),
++                 collapse = ", "))
++   out
++ }
+> pp_gyy_bas <- pp_gyy("baseline")
+  PP_ECON_DRIVER not set — columns available in econ_fcst_2026_2031_baseline.rds:
+    econ_employment_thous_yoy_lag1
+    econ_services_providing_yoy_lag1
+    econ_population_thous_yoy_lag1
+    econ_wholesale_and_retail_trade_yoy_lag1
+    econ_housing_permits_thous_yoy_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_yoy_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_yoy_lag1
+    econ_employment_thous_lvl_lag1
+    econ_services_providing_lvl_lag1
+    econ_population_thous_lvl_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_lvl_lag1
+  ⚠️  PP growth fallback (driver not configured) — using 2022-2026 CAGR 5.65% for baseline (scenario-invariant)
+> pp_gyy_opt <- pp_gyy("optimistic")
+  PP_ECON_DRIVER not set — columns available in econ_fcst_2026_2031_optimistic.rds:
+    econ_employment_thous_yoy_lag1
+    econ_services_providing_yoy_lag1
+    econ_population_thous_yoy_lag1
+    econ_wholesale_and_retail_trade_yoy_lag1
+    econ_housing_permits_thous_yoy_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_yoy_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_yoy_lag1
+    econ_employment_thous_lvl_lag1
+    econ_services_providing_lvl_lag1
+    econ_population_thous_lvl_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_lvl_lag1
+  ⚠️  PP growth fallback (driver not configured) — using 2022-2026 CAGR 5.65% for optimistic (scenario-invariant)
+> pp_gyy_pes <- pp_gyy("pessimistic")
+  PP_ECON_DRIVER not set — columns available in econ_fcst_2026_2031_pessimistic.rds:
+    econ_employment_thous_yoy_lag1
+    econ_services_providing_yoy_lag1
+    econ_population_thous_yoy_lag1
+    econ_wholesale_and_retail_trade_yoy_lag1
+    econ_housing_permits_thous_yoy_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_yoy_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_yoy_lag1
+    econ_employment_thous_lvl_lag1
+    econ_services_providing_lvl_lag1
+    econ_population_thous_lvl_lag1
+    econ_seattle_msa_s_p_corelogic_case_shilller_home_price_index_lvl_lag1
+    econ_seattle_msa_cpi_u_1982_1984_100_lvl_lag1
+  ⚠️  PP growth fallback (driver not configured) — using 2022-2026 CAGR 5.65% for pessimistic (scenario-invariant)
+> 
+> message("  Com baseline growth rates:")
+  Com baseline growth rates:
+> print(com_gyy_bas)
+   tax_yr  track          gyy n_matched scenario
+    <int> <char>        <num>     <int>   <char>
+1:   2027    com -0.063845545     15356 baseline
+2:   2028    com -0.012777328     17963 baseline
+3:   2029    com  0.004631558     17963 baseline
+4:   2030    com  0.015015842     17963 baseline
+5:   2031    com  0.018562724     17963 baseline
+> 
+> # --- Sanity table: matched YoY rates, all tracks x scenarios ------------
+> # 2027 rates should look like value growth (single-digit %), NOT the
+> # coverage jumps (+205% condo / +12% com) the old sum-based rates showed.
+> gyy_check <- rbindlist(Filter(Negate(is.null), list(
++   res_gyy_bas, res_gyy_opt, res_gyy_pes,
++   condo_gyy_bas, condo_gyy_opt, condo_gyy_pes,
++   com_gyy_bas, com_gyy_opt, com_gyy_pes)), use.names = TRUE)
+> message("\n=== Matched-parcel YoY growth (%) ===")
+
+=== Matched-parcel YoY growth (%) ===
+> print(dcast(gyy_check[, .(tax_yr, scenario, track,
++                           pct = round(100 * gyy, 2))],
++             track + tax_yr ~ scenario, value.var = "pct"))
+Key: <track, tax_yr>
+     track tax_yr baseline optimistic pessimistic
+    <char>  <int>    <num>      <num>       <num>
+ 1:    com   2027    -6.38      -6.40       -6.46
+ 2:    com   2028    -1.28      -1.06       -2.66
+ 3:    com   2029     0.46       0.41        0.92
+ 4:    com   2030     1.50       1.49        0.94
+ 5:    com   2031     1.86       1.94        1.40
+ 6:  condo   2027     4.57       4.57        4.57
+ 7:  condo   2028     4.66       4.66        4.66
+ 8:  condo   2029     4.81       4.81        4.81
+ 9:  condo   2030     5.10       4.84        4.84
+10:  condo   2031     5.12       5.12        4.87
+11:    res   2027    -0.87      -0.87       -0.87
+12:    res   2028     4.55       3.74       -2.68
+13:    res   2029     4.08       4.17        4.10
+14:    res   2030     4.54       4.84        4.04
+15:    res   2031     4.59       4.86        4.44
+> message("Matched parcel counts (baseline):")
+Matched parcel counts (baseline):
+> print(dcast(gyy_check[scenario == "baseline"],
++             track ~ tax_yr, value.var = "n_matched"))
+Key: <track>
+    track   2027   2028   2029   2030   2031
+   <char>  <int>  <int>  <int>  <int>  <int>
+1:    com  15356  17963  17963  17963  17963
+2:  condo  35771  97564  97564  97564  97564
+3:    res 166330 166330 166330 166330 166330
+> 
+> # ============================================================================
+> # 3b. CALIBRATION TO THE ASSESSOR'S PRELIMINARY TY2027 ROLL (optional)
+> # ============================================================================
+> # Default NULL: off, output unchanged.  To calibrate, set
+> #   PRELIM_TOTAL <- 294452027000   # preliminary TY2027 roll, after the senior
+> #                                  # exemption = regular-levy basis, like the
+> #                                  # certified totals above; includes personal
+> #                                  # property and state-assessed value
+> #   PRELIM_NC    <- 1631730000     # new construction inside PRELIM_TOTAL
+> #   PRELIM_PP    <- NULL           # optional preliminary PP figure
+> # When set:
+> #   existing 2027 (real + PP) = PRELIM_TOTAL - PRELIM_NC
+> #   PP 2027                   = PRELIM_PP if given, else this script's PP
+> #                               forecast; state-assessed value rides inside
+> #                               PP / the total with no separate adjustment
+> #   real 2027 by type         = this script's certified-basis 2027 res / com /
+> #                               condo, scaled by one factor so real + PP hits
+> #                               the existing total
+> #   NC                        = stock 2027 = PRELIM_NC (replaces the CSV's
+> #                               2027 flow), then stock x (1 + real growth) +
+> #                               the CSV flows for 2028-2031
+> #   2028-2031                 = the pipeline's growth rates compounded from
+> #                               the calibrated 2027
+> # and NC is layered into every chart and table labelled Total ("Total incl.
+> # new construction"), so all of them show PRELIM_TOTAL in 2027.
+> PRELIM_TOTAL <- 294452027000
+> PRELIM_NC    <- 1631730000
+> PRELIM_PP    <- NULL
+> 
+> prelim_on <- !is.null(PRELIM_TOTAL) || !is.null(PRELIM_NC) || !is.null(PRELIM_PP)
+> if (prelim_on) {
++   is_num1 <- function(x) is.numeric(x) && length(x) == 1L && is.finite(x)
++   if (!is_num1(PRELIM_TOTAL) || !is_num1(PRELIM_NC))
++     stop("Preliminary-roll calibration needs BOTH PRELIM_TOTAL and PRELIM_NC as ",
++          "single finite numbers in dollars (or all PRELIM_* NULL to switch it off).")
++   if (!is.null(PRELIM_PP) && !is_num1(PRELIM_PP))
++     stop("PRELIM_PP must be NULL or a single finite number in dollars.")
++   if (PRELIM_TOTAL < 1e9)
++     stop("PRELIM_TOTAL = ", PRELIM_TOTAL, " - give dollars, not billions ",
++          "(e.g. 294452027000).")
++   if (PRELIM_NC < 0 || PRELIM_NC >= PRELIM_TOTAL)
++     stop("PRELIM_NC must be >= 0 and below PRELIM_TOTAL.")
++   if (!is.null(PRELIM_PP) && (PRELIM_PP < 0 || PRELIM_PP >= PRELIM_TOTAL - PRELIM_NC))
++     stop("PRELIM_PP must be >= 0 and below PRELIM_TOTAL - PRELIM_NC.")
++   message("\nPreliminary-roll calibration ON: total ",
++           format(PRELIM_TOTAL, big.mark = ",", scientific = FALSE),
++           " | NC ", format(PRELIM_NC, big.mark = ",", scientific = FALSE),
++           " | PP ", if (is.null(PRELIM_PP)) "script forecast" else
++             format(PRELIM_PP, big.mark = ",", scientific = FALSE))
++ }
+
+Preliminary-roll calibration ON: total 294,452,027,000 | NC 1,631,730,000 | PP script forecast
+> 
+> # NC flow table (tax_yr + one column per scenario) with 2027 set to PRELIM_NC
+> # when the calibration is on.  NULL in, calibration off: NULL out.
+> # report = TRUE prints the CSV's own 2027 flow next to PRELIM_NC.
+> prelim_nc_override <- function(w, report = FALSE) {
++   if (!prelim_on) return(w)
++   sc <- c("baseline", "optimistic", "pessimistic")
++   if (is.null(w)) {
++     message("  No NC forecast CSV: NC = PRELIM_NC in 2027, no NC flows after ",
++             "2027 (the 2027 stock still compounds).")
++     w <- tibble(tax_yr = 2027L)
++   }
++   w <- as_tibble(w) %>% mutate(tax_yr = as.integer(tax_yr))
++   if (!2027L %in% w$tax_yr) w <- bind_rows(w, tibble(tax_yr = 2027L))
++   for (cn in sc) {
++     if (!cn %in% names(w)) w[[cn]] <- NA_real_
++     if (report)
++       message(sprintf("  NC 2027 %-11s CSV flow %s -> PRELIM_NC %s", cn,
++                       format(round(w[[cn]][w$tax_yr == 2027L]), big.mark = ",",
++                              scientific = FALSE),
++                       format(PRELIM_NC, big.mark = ",", scientific = FALSE)))
++     w[[cn]][w$tax_yr == 2027L] <- PRELIM_NC
++   }
++   arrange(w, tax_yr)
++ }
+> 
+> # ============================================================================
+> # 4. BUILD CERTIFIED-BASED FORECAST (2027-2031)
+> # ============================================================================
+> message("\nBuilding certified-based forecast...")
+
+Building certified-based forecast...
+> 
+> build_forecast <- function(gyy_list, scenario_label) {
++   gyy_all <- rbindlist(Filter(function(x) !is.null(x), gyy_list), use.names = TRUE)
++   gyy_all <- gyy_all[scenario == scenario_label]
++ 
++   tracks <- unique(gyy_all$track)
++   results <- list()
++ 
++   for (tr in tracks) {
++     base_2026 <- cert_by_type %>%
++       filter(tax_yr == 2026, track == tr) %>%
++       pull(cert_av)
++     if (length(base_2026) == 0) next
++ 
++     tr_gyy <- gyy_all[track == tr][order(tax_yr)]
++ 
++     fcst <- data.table(tax_yr = 2026:2031, track = tr,
++                        scenario = scenario_label, cert_av = NA_real_)
++     fcst$cert_av[1] <- base_2026
++ 
++     for (i in 2:nrow(fcst)) {
++       yr <- fcst$tax_yr[i]
++       g <- tr_gyy[tax_yr == yr, gyy]
++       if (length(g) == 0 || is.na(g)) g <- 0
++       fcst$cert_av[i] <- fcst$cert_av[i-1] * (1 + g)
++     }
++     results[[tr]] <- fcst
++   }
++   rbindlist(results, use.names = TRUE)
++ }
+> 
+> fcst_bas <- build_forecast(list(res_gyy_bas, condo_gyy_bas, com_gyy_bas, pp_gyy_bas), "baseline")
+> fcst_opt <- build_forecast(list(res_gyy_opt, condo_gyy_opt, com_gyy_opt, pp_gyy_opt), "optimistic")
+> fcst_pes <- build_forecast(list(res_gyy_pes, condo_gyy_pes, com_gyy_pes, pp_gyy_pes), "pessimistic")
+> 
+> # ---- 4b. Preliminary-roll calibration (section 3b) -------------------------
+> # Scaling 2027-2031 of a track by one factor is the same as compounding the
+> # pipeline's own growth rates from its calibrated 2027 value.
+> calibrate_prelim <- function(fcst) {
++   real_tr <- c("res", "com", "condo")
++   sc <- fcst$scenario[1]
++   miss <- setdiff(c(real_tr, "pp"), unique(fcst$track))
++   if (length(miss))
++     stop("Preliminary-roll calibration (", sc, "): no forecast for track(s) ",
++          paste(miss, collapse = ", "), " - every track must be present to ",
++          "split the existing total.")
++   existing <- PRELIM_TOTAL - PRELIM_NC
++   pp_pipe  <- fcst[track == "pp" & tax_yr == 2027, cert_av]
++   pp27     <- if (is.null(PRELIM_PP)) pp_pipe else PRELIM_PP
++   pipe27   <- fcst[track %in% real_tr & tax_yr == 2027, sum(cert_av)]
++   k    <- (existing - pp27) / pipe27
++   k_pp <- pp27 / pp_pipe
++   out <- copy(fcst)
++   out[track %in% real_tr & tax_yr >= 2027, cert_av := cert_av * k]
++   out[track == "pp" & tax_yr >= 2027, cert_av := cert_av * k_pp]
++   tab <- merge(
++     as.data.table(cert_by_type)[tax_yr == 2026, .(track, certified_2026 = cert_av)],
++     merge(fcst[tax_yr == 2027, .(track, pipeline_2027 = cert_av)],
++           out[tax_yr == 2027, .(track, calibrated_2027 = cert_av)], by = "track"),
++     by = "track", all.y = TRUE)
++   tab <- tab[order(match(track, c(real_tr, "pp")))]
++   tab[, scale := calibrated_2027 / pipeline_2027]
++   tab <- rbind(tab, tab[, .(track = "Existing (real + PP)",
++                             certified_2026 = sum(certified_2026),
++                             pipeline_2027 = sum(pipeline_2027),
++                             calibrated_2027 = sum(calibrated_2027),
++                             scale = NA_real_)])
++   message("\n=== TY2027 by type, ", sc, " ($B): certified 2026 | pipeline 2027 | ",
++           "calibrated 2027 | scale factor ===")
++   message("    real-property scale factor k = ", sprintf("%.6f", k),
++           if (!is.null(PRELIM_PP)) sprintf(" | PP scale (PRELIM_PP) = %.6f", k_pp) else
++             " | PP = script forecast (scale 1)")
++   print(tab[, .(track,
++                 certified_2026  = round(certified_2026 / 1e9, 3),
++                 pipeline_2027   = round(pipeline_2027 / 1e9, 3),
++                 calibrated_2027 = round(calibrated_2027 / 1e9, 3),
++                 scale           = round(scale, 6),
++                 pipeline_vs_cert   = sprintf("%+.2f%%", 100 * (pipeline_2027 / certified_2026 - 1)),
++                 calibrated_vs_cert = sprintf("%+.2f%%", 100 * (calibrated_2027 / certified_2026 - 1)))],
++         row.names = FALSE)
++   out
++ }
+> if (prelim_on) {
++   fcst_bas <- calibrate_prelim(fcst_bas)
++   fcst_opt <- calibrate_prelim(fcst_opt)
++   fcst_pes <- calibrate_prelim(fcst_pes)
++ }
+
+=== TY2027 by type, baseline ($B): certified 2026 | pipeline 2027 | calibrated 2027 | scale factor ===
+    real-property scale factor k = 0.972285 | PP = script forecast (scale 1)
+                track certified_2026 pipeline_2027 calibrated_2027    scale pipeline_vs_cert calibrated_vs_cert
+               <char>          <num>         <num>           <num>    <num>           <char>             <char>
+                  res        168.113       166.657         162.038 0.972285           -0.87%             -3.61%
+                  com         96.269        90.123          87.625 0.972285           -6.38%             -8.98%
+                condo         32.753        34.249          33.300 0.972285           +4.57%             +1.67%
+                   pp          9.331         9.858           9.858 1.000000           +5.65%             +5.65%
+ Existing (real + PP)        306.467       300.886         292.820       NA           -1.82%             -4.45%
+
+=== TY2027 by type, optimistic ($B): certified 2026 | pipeline 2027 | calibrated 2027 | scale factor ===
+    real-property scale factor k = 0.972330 | PP = script forecast (scale 1)
+                track certified_2026 pipeline_2027 calibrated_2027   scale pipeline_vs_cert calibrated_vs_cert
+               <char>          <num>         <num>           <num>   <num>           <char>             <char>
+                  res        168.113       166.657         162.045 0.97233           -0.87%             -3.61%
+                  com         96.269        90.110          87.616 0.97233           -6.40%             -8.99%
+                condo         32.753        34.249          33.301 0.97233           +4.57%             +1.67%
+                   pp          9.331         9.858           9.858 1.00000           +5.65%             +5.65%
+ Existing (real + PP)        306.467       300.873         292.820      NA           -1.83%             -4.45%
+
+=== TY2027 by type, pessimistic ($B): certified 2026 | pipeline 2027 | calibrated 2027 | scale factor ===
+    real-property scale factor k = 0.972523 | PP = script forecast (scale 1)
+                track certified_2026 pipeline_2027 calibrated_2027    scale pipeline_vs_cert calibrated_vs_cert
+               <char>          <num>         <num>           <num>    <num>           <char>             <char>
+                  res        168.113       166.657         162.077 0.972523           -0.87%             -3.59%
+                  com         96.269        90.052          87.577 0.972523           -6.46%             -9.03%
+                condo         32.753        34.249          33.308 0.972523           +4.57%             +1.69%
+                   pp          9.331         9.858           9.858 1.000000           +5.65%             +5.65%
+ Existing (real + PP)        306.467       300.815         292.820       NA           -1.84%             -4.45%
+> 
+> # ============================================================================
+> # 5. COMBINE HISTORY + FORECAST
+> # ============================================================================
+> 
+> # History: same across scenarios
+> hist_dt <- as.data.table(cert_by_type)[, scenario := "baseline"]
+> hist_opt <- copy(hist_dt)[, scenario := "optimistic"]
+> hist_pes <- copy(hist_dt)[, scenario := "pessimistic"]
+> 
+> # Forecast: 2027+ only
+> fcst_combined <- rbindlist(list(fcst_bas, fcst_opt, fcst_pes), use.names = TRUE)
+> fcst_combined <- fcst_combined[tax_yr > 2026]
+> 
+> full_series <- rbindlist(list(hist_dt, hist_opt, hist_pes, fcst_combined), use.names = TRUE)
+> 
+> # ============================================================================
+> # 5b. NEW CONSTRUCTION LAYER  (additive + compounding)
+> # ============================================================================
+> # Consumes the output of 05_new_construction_forecast.R (TRS construction
+> # sales tax, 6-quarter lag, 47% realization, releveled off the certified
+> # 2026 NC of $4,511,865,685 — i.e. the layer is ALREADY certified-basis).
+> #
+> # History needs nothing: each certified total embeds that year's NC.
+> # Forecast years add NC explicitly because matched-parcel chains exclude
+> # entrants by construction.  NC added in year k joins the stock and
+> # revalues at blended real-property growth thereafter:
+> #   NC_stock(y) = NC_stock(y-1) * (1 + g_real(y)) + NC_flow(y)
+> INCLUDE_NC <- FALSE  # ← 2026-07-30 decision: NC dropped from this lineup
+>                      #   (handled separately downstream).  Flip to TRUE to
+>                      #   restore the additive-compounding layer; the TRS
+>                      #   extraction fix + both plausibility guards remain
+>                      #   in place below.
+> 
+> # The preliminary-roll calibration always layers NC in, so every Total
+> # (charts, display, summary CSV) includes it and hits PRELIM_TOTAL in 2027.
+> nc_in_total <- INCLUDE_NC || prelim_on
+> 
+> if (!nc_in_total) {
++   message("\nNew construction layer EXCLUDED (INCLUDE_NC = FALSE).")
++ } else {
++ 
++ nc_files <- c(
++   list.files(here(), pattern = "^OERF_New_Construction_Forecast_.*\\.csv$",
++              full.names = TRUE),
++   list.files(here("data", "wrangled"),
++              pattern = "^OERF_New_Construction_Forecast_.*\\.csv$",
++              full.names = TRUE))
++ 
++ nc_layer_wide <- NULL
++ if (length(nc_files) > 0) {
++   nc_path <- sort(nc_files)[length(nc_files)]  # date-suffixed: last = newest
++   message("\nNew construction layer from: ", basename(nc_path))
++   nc_layer_wide <- as.data.table(read_csv(nc_path, show_col_types = FALSE))[
++     , .(tax_yr = as.integer(tax_year), baseline, optimistic, pessimistic)]
++ }
++ nc_layer_wide <- prelim_nc_override(nc_layer_wide, report = TRUE)  # 2027 = PRELIM_NC if set
++ 
++ if (is.null(nc_layer_wide)) {
++   warning("No OERF_New_Construction_Forecast_*.csv found — total EXCLUDES ",
++           "new construction. Run 05_new_construction_forecast.R first.",
++           call. = FALSE)
++ } else {
++   nc_flow <- melt(as.data.table(nc_layer_wide), id.vars = "tax_yr",
++                   variable.name = "scenario",
++                   value.name = "flow", variable.factor = FALSE)
++   nc_flow <- nc_flow[tax_yr >= 2027 & tax_yr <= 2031]
++ 
++   # --- Plausibility guard -----------------------------------------------
++   # Annual NC flow should be in the neighborhood of the certified 2026 NC
++   # ($4.51B).  A flow beyond 3x that (or negative) almost certainly means
++   # a units/column error upstream in 05_new_construction_forecast.R (e.g.
++   # TRS sheet column I/J misalignment) — refuse to compound garbage.
++   cert_nc_2026 <- 4511865685
++   bad <- nc_flow[flow > 3 * cert_nc_2026 | flow < 0]
++   if (nrow(bad) > 0) {
++     message("  \u274c implausible NC flows:")
++     print(bad[, .(tax_yr, scenario, flow_B = round(flow / 1e9, 2))])
++     stop("NC flows outside plausible range (0 to 3x certified 2026 NC of ",
++          "$4.51B). Check the TRS scenario column extraction in ",
++          "05_new_construction_forecast.R before layering.")
++   }
++ 
++   # Blended real-property growth per scenario (res+com+condo, excl. pp)
++   real_g <- full_series[track %in% c("res", "com", "condo"),
++                         .(real_av = sum(cert_av)), by = .(scenario, tax_yr)]
++   setorder(real_g, scenario, tax_yr)
++   real_g[, g := real_av / shift(real_av) - 1, by = scenario]
++ 
++   nc_rows <- list()
++   for (sc in unique(nc_flow$scenario)) {
++     stock <- 0
++     for (yr in 2027:2031) {
++       g  <- real_g[scenario == sc & tax_yr == yr, g]
++       fl <- nc_flow[scenario == sc & tax_yr == yr, flow]
++       if (length(g)  == 0 || is.na(g))  g  <- 0
++       if (length(fl) == 0 || is.na(fl)) fl <- 0
++       stock <- stock * (1 + g) + fl
++       nc_rows[[paste(sc, yr)]] <-
++         data.table(tax_yr = yr, track = "nc", cert_av = stock, scenario = sc)
++     }
++   }
++   nc_dt <- rbindlist(nc_rows)
++   message("  NC cumulative stock by 2031 ($B): ",
++           paste(nc_dt[tax_yr == 2031,
++                       paste0(scenario, "=", round(cert_av / 1e9, 2))],
++                 collapse = ", "))
++   full_series <- rbind(full_series, nc_dt, use.names = TRUE)
++ }
++ 
++ } # end INCLUDE_NC
+
+New construction layer from: OERF_New_Construction_Forecast_2026-10-10.csv
+  NC 2027 baseline    CSV flow 4,420,961,510 -> PRELIM_NC 1,631,730,000
+  NC 2027 optimistic  CSV flow 4,420,961,510 -> PRELIM_NC 1,631,730,000
+  NC 2027 pessimistic CSV flow 4,420,961,510 -> PRELIM_NC 1,631,730,000
+  NC cumulative stock by 2031 ($B): baseline=21.67, optimistic=22.24, pessimistic=19.21
+> 
+> # Pivot to wide
+> full_wide <- dcast(full_series, tax_yr + track ~ scenario,
++                    value.var = "cert_av", fun.aggregate = sum)
+> 
+> # nc exists only in forecast years; drop the zero-filled history rows the
+> # dcast creates (history embeds NC implicitly — no line to draw there)
+> full_wide <- full_wide[!(track == "nc" & baseline == 0 &
++                            optimistic == 0 & pessimistic == 0)]
+> 
+> # Totals
+> total_wide <- full_wide[, .(baseline = sum(baseline),
++                              optimistic = sum(optimistic),
++                              pessimistic = sum(pessimistic)), by = tax_yr]
+> total_wide[, track := "Total"]
+> full_wide <- rbind(full_wide, total_wide, use.names = TRUE)
+> 
+> full_wide[, `:=`(av_b = baseline / 1e9,
++                   av_opt = optimistic / 1e9,
++                   av_pes = pessimistic / 1e9)]
+> 
+> # ============================================================================
+> # 6b. SUMMARY TABLES  (+ CSV export)
+> # ============================================================================
+> # Certified-basis analog of av_fcst_summary() in main_ml.R: one row per tax
+> # year starting at the 2026 certificate, columns baseline / pessimistic /
+> # optimistic.  The TOTAL table INCLUDES cumulative new construction (stock
+> # recursion at blended real-property growth) so the receiver gets one
+> # all-in number; the second table shows the annual NC additions so the NC
+> # contribution stays visible.  Charts remain governed by INCLUDE_NC.
+> wrangled_dir <- here("data", "wrangled")
+> dir.create(wrangled_dir, showWarnings = FALSE, recursive = TRUE)
+> stamp <- format(Sys.Date(), "%Y%m%d")
+> fmt_b <- function(x) paste0("$", format(round(x / 1e9, 2), big.mark = ","), "B")
+> scen_cols <- c("baseline", "pessimistic", "optimistic")
+> 
+> # ---- New construction flows (read once; used for stock AND the table) ------
+> nc_sum_files <- c(
++   list.files(here(), pattern = "^OERF_New_Construction_Forecast_.*\\.csv$",
++              full.names = TRUE),
++   list.files(wrangled_dir,
++              pattern = "^OERF_New_Construction_Forecast_.*\\.csv$",
++              full.names = TRUE))
+> 
+> nc_stock_tbl <- NULL
+> nc_summary   <- NULL
+> if (length(nc_sum_files) > 0)
++   nc_summary <- read_csv(sort(nc_sum_files)[length(nc_sum_files)],
++                          show_col_types = FALSE) %>%
++     mutate(tax_yr = as.integer(tax_year)) %>%
++     filter(tax_yr >= 2026) %>%
++     select(tax_yr, all_of(scen_cols))
+> nc_summary <- prelim_nc_override(nc_summary)   # 2027 = PRELIM_NC if set                                                                                                                                            
+> 
+> if (is.null(nc_summary)) {
++   message("\u26a0\ufe0f  No OERF_New_Construction_Forecast_*.csv found — ",
++           "summary total will EXCLUDE new construction. ",
++           "Run 05_new_construction_forecast.R.")
++ } else {
++ 
++   # Plausibility guard (same rule as the layer): flows near certified 2026 NC
++   cert_nc_2026 <- 4511865685
++   bad <- as.data.table(nc_summary)[tax_yr >= 2027] |>
++     melt(id.vars = "tax_yr", variable.name = "scenario",
++          value.name = "flow", variable.factor = FALSE)
++   bad <- bad[flow > 3 * cert_nc_2026 | flow < 0]
++   if (nrow(bad) > 0) {
++     print(bad[, .(tax_yr, scenario, flow_B = round(flow / 1e9, 2))])
++     stop("NC flows outside plausible range (0 to 3x certified 2026 NC). ",
++          "Check 05_new_construction_forecast.R before summarising.")
++   }
++ 
++   # Cumulative NC stock: stock(y) = stock(y-1) * (1 + g_real(y)) + flow(y)
++   nc_dt <- as.data.table(nc_summary)
++   real_tracks <- full_wide[track %in% c("res", "com", "condo")]
++   nc_stock_tbl <- data.table(tax_yr = 2027:2031)
++   for (sc in scen_cols) {
++     rg <- real_tracks[, .(v = sum(get(sc))), by = tax_yr][order(tax_yr)]
++     rg[, g := v / shift(v) - 1]
++     stock <- 0
++     stocks <- numeric(0)
++     for (yr in 2027:2031) {
++       g  <- rg[tax_yr == yr, g]
++       fl <- nc_dt[tax_yr == yr][[sc]]
++       if (length(g)  == 0 || is.na(g))  g  <- 0
++       if (length(fl) == 0 || is.na(fl)) fl <- 0
++       stock <- stock * (1 + g) + fl
++       stocks <- c(stocks, stock)
++     }
++     nc_stock_tbl[, (sc) := stocks]
++   }
++ }
+> 
+> # ---- Total certified AV (incl. cumulative new construction) ----------------
+> total_summary <- full_wide[track == "Total" & tax_yr >= 2026,
++                            .(tax_yr, baseline, pessimistic, optimistic)]
+> if (nc_in_total) {
++   # NC is already a track inside full_wide's Total (section 5b); adding the
++   # stock again would count it twice.
++   message("\n=== Certified-Basis Total AV Summary ",
++           "(Total incl. new construction) ===")
++ } else if (!is.null(nc_stock_tbl)) {
++   total_summary[nc_stock_tbl, on = "tax_yr",
++                 `:=`(baseline    = baseline    + i.baseline,
++                      pessimistic = pessimistic + i.pessimistic,
++                      optimistic  = optimistic  + i.optimistic)]
++   message("\n=== Certified-Basis Total AV Summary ",
++           "(incl. cumulative new construction) ===")
++ } else {
++   message("\n=== Certified-Basis Total AV Summary ",
++           "(EXCLUDES new construction — NC CSV not found) ===")
++ }
+
+=== Certified-Basis Total AV Summary (Total incl. new construction) ===
+> total_summary <- tibble::as_tibble(total_summary)
+> print(total_summary %>%
++         mutate(across(all_of(scen_cols), fmt_b)))
+# A tibble: 6 × 4
+  tax_yr baseline pessimistic optimistic
+   <int> <chr>    <chr>       <chr>     
+1   2026 $306.47B $306.47B    $306.47B  
+2   2027 $294.45B $294.45B    $294.45B  
+3   2028 $307.37B $294.14B    $306.28B  
+4   2029 $321.70B $307.82B    $320.75B  
+5   2030 $338.61B $321.95B    $338.22B  
+6   2031 $356.96B $338.15B    $357.35B  
+> 
+> if (prelim_on) {
++   cert26 <- certified_av$cert_total[certified_av$tax_yr == 2026]
++   f27 <- full_wide[tax_yr == 2027]
++   fmt_d <- function(x) format(round(x), big.mark = ",", scientific = FALSE)
++   message("\n=== Implied TY2027 total from the preliminary-roll calibration ===")
++   message("  PRELIM_TOTAL ", fmt_d(PRELIM_TOTAL), " = existing ",
++           fmt_d(PRELIM_TOTAL - PRELIM_NC), " + NC ", fmt_d(PRELIM_NC),
++           "  (existing vs certified 2026 ", fmt_d(cert26), ": ",
++           sprintf("%+.4f%%", 100 * ((PRELIM_TOTAL - PRELIM_NC) / cert26 - 1)), ")")
++   for (sc in scen_cols) {
++     ex <- f27[track %in% c("res", "com", "condo", "pp"), sum(get(sc))]
++     nc <- f27[track == "nc", sum(get(sc))]
++     tt <- f27[track == "Total", get(sc)]
++     message(sprintf("  %-11s existing (real + PP) %s + NC %s = Total incl. new construction %s%s",
++                     sc, fmt_d(ex), fmt_d(nc), fmt_d(tt),
++                     if (abs(tt - PRELIM_TOTAL) < 1) "  (= PRELIM_TOTAL)" else "  ** differs from PRELIM_TOTAL **"))
++   }
++ 
++   message("\n=== Calibrated path by type and total, 2026-2031 ($B) ===")
++   for (sc in scen_cols) {
++     pth <- dcast(full_wide[tax_yr >= 2026], tax_yr ~ track, value.var = sc)
++     setcolorder(pth, c("tax_yr", intersect(c("res", "com", "condo", "pp", "nc", "Total"), names(pth))))
++     for (cn in setdiff(names(pth), "tax_yr")) set(pth, j = cn, value = round(pth[[cn]] / 1e9, 3))
++     setnames(pth, "Total", "Total incl. NC", skip_absent = TRUE)
++     message("--- ", sc, " ---")
++     print(pth, row.names = FALSE)
++   }
++ }
+
+=== Implied TY2027 total from the preliminary-roll calibration ===
+  PRELIM_TOTAL 294,452,027,000 = existing 292,820,297,000 + NC 1,631,730,000  (existing vs certified 2026 306,466,960,900: -4.4529%)
+  baseline    existing (real + PP) 292,820,297,000 + NC 1,631,730,000 = Total incl. new construction 294,452,027,000  (= PRELIM_TOTAL)
+  pessimistic existing (real + PP) 292,820,297,000 + NC 1,631,730,000 = Total incl. new construction 294,452,027,000  (= PRELIM_TOTAL)
+  optimistic  existing (real + PP) 292,820,297,000 + NC 1,631,730,000 = Total incl. new construction 294,452,027,000  (= PRELIM_TOTAL)
+
+=== Calibrated path by type and total, 2026-2031 ($B) ===
+--- baseline ---
+Key: <tax_yr>
+ tax_yr     res    com  condo     pp     nc Total incl. NC
+  <int>   <num>  <num>  <num>  <num>  <num>          <num>
+   2026 168.113 96.269 32.753  9.331     NA        306.467
+   2027 162.038 87.625 33.300  9.858  1.632        294.452
+   2028 169.410 86.506 34.852 10.414  6.185        307.368
+   2029 176.324 86.906 36.529 11.002 10.938        321.699
+   2030 184.334 88.211 38.390 11.624 16.050        338.609
+   2031 192.804 89.849 40.356 12.280 21.670        356.958
+--- pessimistic ---
+Key: <tax_yr>
+ tax_yr     res    com  condo     pp     nc Total incl. NC
+  <int>   <num>  <num>  <num>  <num>  <num>          <num>
+   2026 168.113 96.269 32.753  9.331     NA        306.467
+   2027 162.077 87.577 33.308  9.858  1.632        294.452
+   2028 157.729 85.249 34.861 10.414  5.885        294.138
+   2029 164.200 86.036 36.538 11.002 10.041        307.817
+   2030 170.838 86.849 38.307 11.624 14.330        321.946
+   2031 178.423 88.064 40.174 12.280 19.213        338.154
+--- optimistic ---
+Key: <tax_yr>
+ tax_yr     res    com  condo     pp     nc Total incl. NC
+  <int>   <num>  <num>  <num>  <num>  <num>          <num>
+   2026 168.113 96.269 32.753  9.331     NA        306.467
+   2027 162.045 87.616 33.301  9.858  1.632        294.452
+   2028 168.111 86.684 34.854 10.414  6.212        306.276
+   2029 175.115 87.041 36.530 11.002 11.059        320.748
+   2030 183.597 88.337 38.299 11.624 16.360        338.216
+   2031 192.514 90.053 40.262 12.280 22.243        357.352
+> total_csv <- file.path(wrangled_dir,
++                        paste0("av_certified_total_summary_", stamp, ".csv"))
+> write_csv(total_summary, total_csv)
+> message("\U1f4be exported: ", total_csv)                                                                                                                                                                          
+💾 exported: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/wrangled/av_certified_total_summary_20261010.csv
+> 
+> # ---- New construction (annual additions, shown for transparency) -----------
+> if (!is.null(nc_summary)) {
++   message("\n=== New Construction Summary (annual additions) ===")
++   message("    (2026 = certified; these additions are INCLUDED, cumulatively,",
++           " in the total above)")
++   print(nc_summary %>%
++           mutate(across(all_of(scen_cols), fmt_b)))
++   nc_csv <- file.path(wrangled_dir,
++                       paste0("new_construction_summary_", stamp, ".csv"))
++   write_csv(nc_summary, nc_csv)
++   message("\U1f4be exported: ", nc_csv)
++ }
+
+=== New Construction Summary (annual additions) ===
+    (2026 = certified; these additions are INCLUDED, cumulatively, in the total above)
+# A tibble: 6 × 4
+  tax_yr baseline pessimistic optimistic
+   <int> <chr>    <chr>       <chr>     
+1   2026 $4.51B   $4.51B      $4.51B    
+2   2027 $1.63B   $1.63B      $1.63B    
+3   2028 $4.51B   $4.28B      $4.54B    
+4   2029 $4.56B   $3.97B      $4.65B    
+5   2030 $4.70B   $3.97B      $4.87B    
+6   2031 $5.00B   $4.37B      $5.22B    
+💾 exported: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/wrangled/new_construction_summary_20261010.csv
+> 
+> # ============================================================================
+> # 6. DISPLAY
+> # ============================================================================
+> message("\n=== Certified-Based AV Forecast ($B) ===\n")
+
+=== Certified-Based AV Forecast ($B) ===
+> for (tr in intersect(c("res", "condo", "com", "pp", "nc", "Total"),
++                unique(full_wide$track))) {
++   cat(paste0("--- ", tr, " ---\n"))
++   print(full_wide[track == tr, .(tax_yr,
++     baseline = round(baseline / 1e9, 2),
++     optimistic = round(optimistic / 1e9, 2),
++     pessimistic = round(pessimistic / 1e9, 2))], row.names = FALSE)
++   cat("\n")
++ }
+--- res ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2022   138.15     138.15      138.15
+   2023   161.67     161.67      161.67
+   2024   150.10     150.10      150.10
+   2025   161.27     161.27      161.27
+   2026   168.11     168.11      168.11
+   2027   162.04     162.05      162.08
+   2028   169.41     168.11      157.73
+   2029   176.32     175.12      164.20
+   2030   184.33     183.60      170.84
+   2031   192.80     192.51      178.42
+
+--- condo ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2022    29.24      29.24       29.24
+   2023    31.16      31.16       31.16
+   2024    33.35      33.35       33.35
+   2025    31.40      31.40       31.40
+   2026    32.75      32.75       32.75
+   2027    33.30      33.30       33.31
+   2028    34.85      34.85       34.86
+   2029    36.53      36.53       36.54
+   2030    38.39      38.30       38.31
+   2031    40.36      40.26       40.17
+
+--- com ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2022   100.36     100.36      100.36
+   2023   106.33     106.33      106.33
+   2024   107.05     107.05      107.05
+   2025    95.95      95.95       95.95
+   2026    96.27      96.27       96.27
+   2027    87.63      87.62       87.58
+   2028    86.51      86.68       85.25
+   2029    86.91      87.04       86.04
+   2030    88.21      88.34       86.85
+   2031    89.85      90.05       88.06
+
+--- pp ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2022     7.49       7.49        7.49
+   2023     8.54       8.54        8.54
+   2024     8.95       8.95        8.95
+   2025     9.07       9.07        9.07
+   2026     9.33       9.33        9.33
+   2027     9.86       9.86        9.86
+   2028    10.41      10.41       10.41
+   2029    11.00      11.00       11.00
+   2030    11.62      11.62       11.62
+   2031    12.28      12.28       12.28
+
+--- nc ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2027     1.63       1.63        1.63
+   2028     6.18       6.21        5.89
+   2029    10.94      11.06       10.04
+   2030    16.05      16.36       14.33
+   2031    21.67      22.24       19.21
+
+--- Total ---
+ tax_yr baseline optimistic pessimistic
+  <int>    <num>      <num>       <num>
+   2022   275.25     275.25      275.25
+   2023   307.70     307.70      307.70
+   2024   299.44     299.44      299.44
+   2025   297.70     297.70      297.70
+   2026   306.47     306.47      306.47
+   2027   294.45     294.45      294.45
+   2028   307.37     306.28      294.14
+   2029   321.70     320.75      307.82
+   2030   338.61     338.22      321.95
+   2031   356.96     357.35      338.15
+
+> 
+> # ============================================================================
+> # 7. CHARTS
+> # ============================================================================
+> track_labels <- c("res" = "Residential", "condo" = "Condo",
++                    "com" = "Commercial", "pp" = "Personal Property",
++                    "nc" = "New Construction (cum.)",
++                    "Total" = if (nc_in_total) "Total incl. new construction"
++                              else "Total (Certified)")
+> full_wide[, series := track_labels[track]]
+> full_wide[, segment := fifelse(tax_yr <= 2026, "Historical", "Forecast")]
+> 
+> bridge <- copy(full_wide[tax_yr == 2026])
+> bridge[, segment := "Forecast"]
+> plot_data <- rbind(full_wide, bridge, use.names = TRUE)
+> 
+> pal <- c("Residential" = "#2E75B6", "Commercial" = "#C00000",
++          "Condo" = "#7030A0", "Personal Property" = "#548235",
++          "New Construction (cum.)" = "#ED7D31",
++          "Total (Certified)" = "#404040",
++          "Total incl. new construction" = "#404040")
+> 
+> nc_caption <- if (prelim_on)
++   "Calibrated to the Assessor's preliminary TY2027 roll; Total includes new construction." else
++   if (nc_in_total) "Total includes new construction." else "Excludes new construction."
+> 
+> theme_av <- theme_minimal(base_size = 12) +
++   theme(
++     legend.position = "bottom", legend.title = element_blank(),
++     panel.grid.minor = element_blank(),
++     plot.title = element_text(face = "bold", size = 14),
++     plot.subtitle = element_text(size = 10, color = "gray40"),
++     plot.caption = element_text(size = 8, color = "gray50", hjust = 0),
++     axis.title.x = element_blank()
++   )
+> 
+> p1 <- ggplot(plot_data, aes(x = tax_yr)) +
++   geom_ribbon(data = plot_data[segment == "Forecast"],
++               aes(ymin = av_pes, ymax = av_opt, fill = series), alpha = 0.15) +
++   geom_line(aes(y = av_b, color = series, linetype = segment), linewidth = 1.1) +
++   geom_point(data = plot_data[segment == "Historical"],
++              aes(y = av_b, color = series), size = 2) +
++   geom_vline(xintercept = 2026.5, linetype = "dotted", color = "gray60") +
++   annotate("text", x = 2026.7, y = max(plot_data$av_opt, na.rm = TRUE) * 0.97,
++            label = "Forecast", hjust = 0, size = 3, color = "gray50", fontface = "italic") +
++   scale_x_continuous(breaks = 2022:2031) +
++   scale_y_continuous(labels = dollar_format(suffix = "B")) +
++   scale_color_manual(values = pal) +
++   scale_fill_manual(values = pal, guide = "none") +
++   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
++   labs(title = "Seattle Assessed Value by Property Type (Certified Basis)",
++        subtitle = "Certified real property split by type shares + PP layer; ML matched-parcel growth forward",
++        caption = paste0("Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. ", nc_caption, "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
++        y = "Assessed Value ($B)") +
++   theme_av
+> 
+> p2 <- ggplot(plot_data, aes(x = tax_yr)) +
++   geom_ribbon(data = plot_data[segment == "Forecast"],
++               aes(ymin = av_pes, ymax = av_opt, fill = series), alpha = 0.15) +
++   geom_line(aes(y = av_b, color = series, linetype = segment), linewidth = 1.0) +
++   geom_point(data = plot_data[segment == "Historical"],
++              aes(y = av_b, color = series), size = 1.5) +
++   geom_vline(xintercept = 2026.5, linetype = "dotted", color = "gray60", linewidth = 0.4) +
++   facet_wrap(~series, scales = "free_y", ncol = 2) +
++   scale_x_continuous(breaks = seq(2022, 2031, 2)) +
++   scale_y_continuous(labels = dollar_format(suffix = "B")) +
++   scale_color_manual(values = pal) +
++   scale_fill_manual(values = pal, guide = "none") +
++   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
++   labs(title = "Seattle AV Forecast by Property Type (Certified Basis)",
++        subtitle = "Faceted with free y-scales",
++        caption = paste0("Real property split by appraised shares; PP carried separately (econ-linked). Growth: ML parcel models, matched-parcel chains. ", nc_caption, "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
++        y = "Assessed Value ($B)") +
++   theme_av +
++   theme(legend.position = "none", strip.text = element_text(face = "bold"))
+> 
+> total_plot <- plot_data[track == "Total"]
+> end_row <- as.data.frame(total_plot[tax_yr == max(tax_yr) & segment == "Forecast"][1])
+> 
+> p3 <- ggplot(total_plot, aes(x = tax_yr)) +
++   geom_ribbon(data = as.data.frame(total_plot[segment == "Forecast"]),
++               aes(ymin = av_pes, ymax = av_opt), fill = "#404040", alpha = 0.15) +
++   geom_line(aes(y = av_b, linetype = segment), color = "#404040", linewidth = 1.2) +
++   geom_point(data = as.data.frame(total_plot[segment == "Historical"]),
++              aes(y = av_b), color = "#404040", size = 2.5) +
++   geom_vline(xintercept = 2026.5, linetype = "dotted", color = "gray60") +
++   geom_text(data = end_row, aes(x = tax_yr, y = av_opt,
++             label = paste0("Optimistic: $", round(av_opt, 0), "B")),
++             hjust = -0.05, vjust = -0.5, size = 3.2, color = "gray40") +
++   geom_text(data = end_row, aes(x = tax_yr, y = av_b,
++             label = paste0("Baseline: $", round(av_b, 0), "B")),
++             hjust = -0.05, vjust = 0.5, size = 3.2, color = "#404040", fontface = "bold") +
++   geom_text(data = end_row, aes(x = tax_yr, y = av_pes,
++             label = paste0("Pessimistic: $", round(av_pes, 0), "B")),
++             hjust = -0.05, vjust = 1.5, size = 3.2, color = "gray40") +
++   scale_x_continuous(breaks = 2022:2031, limits = c(2022, 2033)) +
++   scale_y_continuous(labels = dollar_format(suffix = "B")) +
++   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
++   labs(title = "Seattle Total Assessed Value Forecast (Certified Basis)",
++        subtitle = "Certified AV with ML matched-parcel growth rates (2027-2031)",
++        caption = paste0("All years anchored to certified AV. ",
++                         if (nc_in_total) "Total includes new construction. " else "",
++                         if (prelim_on) "TY2027 calibrated to the Assessor's preliminary roll." else "",
++                         "\nSource: KC Assessor, CoStar, S&P Global, OERF"),
++        y = "Assessed Value ($B)") +
++   theme_av
+> 
+> # ============================================================================
+> # YoY GROWTH RATE CHARTS
+> # ============================================================================
+> 
+> # Compute YoY growth rates from the certified-based levels
+> gyy_data <- copy(full_wide)
+> setorder(gyy_data, track, tax_yr)
+> gyy_data[, `:=`(
++   gyy_bas = baseline / shift(baseline, 1) - 1,
++   gyy_opt = optimistic / shift(optimistic, 1) - 1,
++   gyy_pes = pessimistic / shift(pessimistic, 1) - 1
++ ), by = track]
+> 
+> gyy_data[, series := track_labels[track]]
+> gyy_data[, segment := fifelse(tax_yr <= 2026, "Historical", "Forecast")]
+> 
+> # Drop first year (no lag) and filter to 2023+
+> gyy_plot <- gyy_data[!is.na(gyy_bas) & tax_yr >= 2023]
+> 
+> # Bridge at 2026 for line continuity
+> gyy_bridge <- copy(gyy_plot[tax_yr == 2026])
+> gyy_bridge[, segment := "Forecast"]
+> gyy_plot <- rbind(gyy_plot, gyy_bridge, use.names = TRUE)
+> 
+> # Chart 4: YoY growth, all types combined
+> p4 <- ggplot(gyy_plot, aes(x = tax_yr)) +
++   geom_hline(yintercept = 0, linetype = "dashed", color = "gray60") +
++   geom_ribbon(data = gyy_plot[segment == "Forecast"],
++               aes(ymin = gyy_pes, ymax = gyy_opt, fill = series), alpha = 0.15) +
++   geom_line(aes(y = gyy_bas, color = series, linetype = segment), linewidth = 1.1) +
++   geom_point(data = gyy_plot[segment == "Historical"],
++              aes(y = gyy_bas, color = series), size = 2) +
++   geom_vline(xintercept = 2026.5, linetype = "dotted", color = "gray60") +
++   scale_x_continuous(breaks = 2023:2031) +
++   scale_y_continuous(labels = percent_format(accuracy = 1)) +
++   scale_color_manual(values = pal) +
++   scale_fill_manual(values = pal, guide = "none") +
++   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
++   labs(title = "Year-over-Year AV Growth by Property Type (Certified Basis)",
++        subtitle = "Historical (2023-2026) and Forecast (2027-2031)",
++        caption = "Growth rates on certified-basis AV. Shaded = optimistic/pessimistic range.\nSource: KC Assessor, CoStar, S&P Global, OERF",
++        y = "YoY Growth") +
++   theme_av
+> 
+> # Chart 5: YoY growth, faceted
+> p5 <- ggplot(gyy_plot, aes(x = tax_yr)) +
++   geom_hline(yintercept = 0, linetype = "dashed", color = "gray60") +
++   geom_ribbon(data = gyy_plot[segment == "Forecast"],
++               aes(ymin = gyy_pes, ymax = gyy_opt, fill = series), alpha = 0.15) +
++   geom_line(aes(y = gyy_bas, color = series, linetype = segment), linewidth = 1.0) +
++   geom_point(data = gyy_plot[segment == "Historical"],
++              aes(y = gyy_bas, color = series), size = 1.5) +
++   geom_vline(xintercept = 2026.5, linetype = "dotted", color = "gray60", linewidth = 0.4) +
++   facet_wrap(~series, scales = "free_y", ncol = 2) +
++   scale_x_continuous(breaks = seq(2023, 2031, 2)) +
++   scale_y_continuous(labels = percent_format(accuracy = 1)) +
++   scale_color_manual(values = pal) +
++   scale_fill_manual(values = pal, guide = "none") +
++   scale_linetype_manual(values = c("Historical" = "solid", "Forecast" = "dashed"), guide = "none") +
++   labs(title = "YoY AV Growth by Property Type (Certified Basis)",
++        subtitle = "Faceted with free y-scales",
++        caption = "Growth rates on certified-basis AV. Shaded = optimistic/pessimistic range.\nSource: KC Assessor, CoStar, S&P Global, OERF",
++        y = "YoY Growth") +
++   theme_av +
++   theme(legend.position = "none", strip.text = element_text(face = "bold"))
+> 
+> # ============================================================================
+> # 8. SAVE
+> # ============================================================================
+> chart_dir <- here("charts")
+> dir.create(chart_dir, showWarnings = FALSE)
+> 
+> ggsave(file.path(chart_dir, "av_certified_by_type.png"), p1, width = 10, height = 6, dpi = 200, bg = "white")
+> ggsave(file.path(chart_dir, "av_certified_faceted.png"), p2, width = 10, height = 7, dpi = 200, bg = "white")
+> ggsave(file.path(chart_dir, "av_certified_total.png"),   p3, width = 10, height = 6, dpi = 200, bg = "white")
+> ggsave(file.path(chart_dir, "av_certified_yoy.png"),     p4, width = 10, height = 6, dpi = 200, bg = "white")
+> ggsave(file.path(chart_dir, "av_certified_yoy_faceted.png"), p5, width = 10, height = 7, dpi = 200, bg = "white")
+> 
+> message("\nCharts saved to: ", chart_dir)
+
+Charts saved to: \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/charts
+> 
+> export <- full_wide[, .(tax_yr, track, series, baseline, optimistic, pessimistic)]
+> write_csv(as_tibble(export),
++           here("data", "wrangled", paste0("av_certified_by_type_", Sys.Date(), ".csv")))
+> message("Data exported to data/wrangled/")                                                                                                                                                                        
+Data exported to data/wrangled/
+> 
+> print(p1)
+> print(p2)
+> print(p3)
+> print(p4)
+> print(p5)
