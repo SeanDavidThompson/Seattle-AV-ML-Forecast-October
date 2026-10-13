@@ -1,35 +1,38 @@
-> setwd("Z:/AV ML Model Oct")
-> PROMOTE_DEFINE_ONLY <- TRUE
-> source("ad_hoc/promote_growth_res.R")
-> promote_growth_res()
-  baseline: panel_tbl_2006_2031_forecasted_baseline_res.rds - unstamped; provenance: in cache_nwmls_growth, newer than growth-stamped lgb_land_delta_cv_20261010_175642.rds + lgb_impr_delta_cv_20261010_180632.rds
-  optimistic: panel_tbl_2006_2031_forecasted_optimistic_res.rds - unstamped; provenance: in cache_nwmls_growth, newer than growth-stamped lgb_land_delta_cv_20261010_175642.rds + lgb_impr_delta_cv_20261010_180632.rds
-  pessimistic: panel_tbl_2006_2031_forecasted_pessimistic_res.rds - unstamped; provenance: in cache_nwmls_growth, newer than growth-stamped lgb_land_delta_cv_20261010_175642.rds + lgb_impr_delta_cv_20261010_180632.rds
-Backup: 6 level file(s) -> \\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/cache/_level_res_backup_20261010_234957
-Promoted 6 file(s); md5 verified.
+setwd("Z:/AV ML Model Oct")
+for (f in c("scripts/05_new_construction_forecast.R", "scripts/av_reconcile_certified.R")) {
+  cat("\n==", f, "\n")
+  print(grep("write|saveRDS|ggsave", readLines(f), value = TRUE))
+}
 
-=== Residential total AV ($B): before (level) -> after (growth) ===
-Key: <scenario, tax_yr>
-    scenario tax_yr before_level_B after_growth_B growth_vs_level
-      <char>  <int>          <num>          <num>          <char>
-    baseline   2026        168.694        168.694         +0.000%
-    baseline   2027        167.269        167.269         +0.000%
-    baseline   2028        174.879        169.909         -2.842%
-    baseline   2029        182.016        174.830         -3.948%
-    baseline   2030        190.284        177.965         -6.474%
-    baseline   2031        199.028        184.246         -7.427%
-  optimistic   2026        168.694        168.694         +0.000%
-  optimistic   2027        167.269        167.269         +0.000%
-  optimistic   2028        173.530        168.799         -2.726%
-  optimistic   2029        180.760        173.747         -3.879%
-  optimistic   2030        189.515        180.021         -5.010%
-  optimistic   2031        198.720        189.569         -4.605%
- pessimistic   2026        168.694        168.694         +0.000%
- pessimistic   2027        167.269        167.269         +0.000%
- pessimistic   2028        162.781        162.219         -0.345%
- pessimistic   2029        169.459        167.237         -1.311%
- pessimistic   2030        176.309        172.449         -2.190%
- pessimistic   2031        184.138        178.455         -3.086%
+# ---- TY2027 relevel: path for TY2028-2031 ----
+# "restart": grow from the TY2027 preliminary (the numbers sent to CBO on 10/12)
+# "glide":   start at the TY2027 preliminary, back on trend by TY2031
+# "history": TY2027 at the preliminary, trend from TY2028 on
+NC_PATH         <- "glide"
+NC_RELEVEL_2027 <- 1631730000
+NC_GLIDE_W      <- c("2028" = 0.25, "2029" = 0.50, "2030" = 0.75, "2031" = 1.00)
 
-Compare the after column with the growth arm in AB_SUMMARY.txt.
-Restore:  restore_level_res("\\ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/data/cache/_level_res_backup_20261010_234957")
+if (!is.null(NC_RELEVEL_2027)) {
+  tx <- as.character(new_construction_forecast[["tax_year"]])
+  stopifnot(sum(tx == "2027") == 1)
+  k_nc <- NC_RELEVEL_2027 / new_construction_forecast[["baseline"]][tx == "2027"]
+  w <- switch(NC_PATH,
+    restart = rep(0, length(tx)),
+    glide   = { g <- unname(NC_GLIDE_W[tx]); g[is.na(g)] <- 0; g },
+    history = ifelse(tx >= "2028", 1, 0),
+    stop("NC_PATH must be restart, glide or history"))
+  yrs <- tx >= "2027"
+  for (cn in c("baseline", "optimistic", "pessimistic")) {
+    trend <- new_construction_forecast[[cn]]
+    low   <- trend * k_nc
+    new_construction_forecast[[cn]][yrs] <- (low + (trend - low) * w)[yrs]
+  }
+  cat("NC path:", NC_PATH, "| k_nc =", round(k_nc, 4), "\n")
+  print(new_construction_forecast[yrs, c("tax_year", "baseline", "optimistic", "pessimistic")])
+}
+
+setwd("Z:/AV ML Model Oct")
+source("scripts/05_new_construction_forecast.R")
+
+setwd("Z:/AV ML Model Oct")
+source("scripts/av_reconcile_certified.R")
