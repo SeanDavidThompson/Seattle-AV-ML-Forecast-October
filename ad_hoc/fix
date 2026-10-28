@@ -1,5 +1,14 @@
-> fit <- lm(ratio ~ dplyr::lag(ratio), data = arrange(ratio_act, year))
-> phi <- coef(fit)[2]
-> c(phi = phi, long_run = coef(fit)[1] / (1 - phi), half_life_yrs = log(0.5) / log(phi))
-          phi.dplyr::lag(ratio)            long_run.(Intercept) half_life_yrs.dplyr::lag(ratio) 
-                      0.7356168                       0.5327347                       2.2574706 
+p  <- unname(coef(fit)[2])
+lr <- unname(coef(fit)[1]) / (1 - p)
+last_rel <- fc |> filter(variable == "nc_seattle") |> slice_max(release_date, n = 1, with_ties = FALSE) |> pull(vintage)
+start_yr <- 2027
+
+fc |>
+  filter(vintage == last_rel, variable %in% c("nc_seattle", "construction_sales_lagged"), year >= start_yr) |>
+  select(year, variable, value) |>
+  pivot_wider(names_from = variable, values_from = value) |>
+  arrange(year) |>
+  mutate(ratio_now = nc_seattle / construction_sales_lagged,
+         ratio_ar1 = lr + p^(year - start_yr) * (first(ratio_now) - lr),
+         nc_ar1    = ratio_ar1 * construction_sales_lagged,
+         diff_B    = (nc_ar1 - nc_seattle) / 1e9)
