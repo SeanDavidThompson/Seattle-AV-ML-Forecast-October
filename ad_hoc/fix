@@ -1,14 +1,23 @@
-p  <- unname(coef(fit)[2])
-lr <- unname(coef(fit)[1]) / (1 - p)
-last_rel <- fc |> filter(variable == "nc_seattle") |> slice_max(release_date, n = 1, with_ties = FALSE) |> pull(vintage)
-start_yr <- 2027
-
-fc |>
-  filter(vintage == last_rel, variable %in% c("nc_seattle", "construction_sales_lagged"), year >= start_yr) |>
-  select(year, variable, value) |>
-  pivot_wider(names_from = variable, values_from = value) |>
-  arrange(year) |>
-  mutate(ratio_now = nc_seattle / construction_sales_lagged,
-         ratio_ar1 = lr + p^(year - start_yr) * (first(ratio_now) - lr),
-         nc_ar1    = ratio_ar1 * construction_sales_lagged,
-         diff_B    = (nc_ar1 - nc_seattle) / 1e9)
+> p  <- unname(coef(fit)[2])
+> lr <- unname(coef(fit)[1]) / (1 - p)
+> last_rel <- fc |> filter(variable == "nc_seattle") |> slice_max(release_date, n = 1, with_ties = FALSE) |> pull(vintage)
+> start_yr <- 2027
+> 
+> fc |>
++     filter(vintage == last_rel, variable %in% c("nc_seattle", "construction_sales_lagged"), year >= start_yr) |>
++     select(year, variable, value) |>
++     pivot_wider(names_from = variable, values_from = value) |>
++     arrange(year) |>
++     mutate(ratio_now = nc_seattle / construction_sales_lagged,
++            ratio_ar1 = lr + p^(year - start_yr) * (first(ratio_now) - lr),
++            nc_ar1    = ratio_ar1 * construction_sales_lagged,
++            diff_B    = (nc_ar1 - nc_seattle) / 1e9)
+# A tibble: 6 × 7
+   year nc_seattle construction_sales_lagged ratio_now ratio_ar1      nc_ar1 diff_B
+  <int>      <dbl>                     <dbl>     <dbl>     <dbl>       <dbl>  <dbl>
+1  2027 3010810018                7613884284     0.395     0.395 3010810018   0    
+2  2028 3429650541                7598408296     0.451     0.432 3280506777. -0.149
+3  2029 3834249444                7757805404     0.494     0.458 3556475808. -0.278
+4  2030 4329469467                7916027621     0.547     0.478 3784503022. -0.545
+5  2031 4996911183                8378563210     0.596     0.493 4126698525. -0.870
+6  2032         NA                8896877411    NA         0.503 4476551603. NA   
