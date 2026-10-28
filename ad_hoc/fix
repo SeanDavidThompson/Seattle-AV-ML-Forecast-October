@@ -1,3 +1,5 @@
-fit <- lm(ratio ~ dplyr::lag(ratio), data = arrange(ratio_act, year))
-phi <- coef(fit)[2]
-c(phi = phi, long_run = coef(fit)[1] / (1 - phi), half_life_yrs = log(0.5) / log(phi))
+> fit <- lm(ratio ~ dplyr::lag(ratio), data = arrange(ratio_act, year))
+> phi <- coef(fit)[2]
+> c(phi = phi, long_run = coef(fit)[1] / (1 - phi), half_life_yrs = log(0.5) / log(phi))
+          phi.dplyr::lag(ratio)            long_run.(Intercept) half_life_yrs.dplyr::lag(ratio) 
+                      0.7356168                       0.5327347                       2.2574706 
