@@ -24,7 +24,12 @@
 #     data.seattle.gov in a browser and point local_csv at it.
 #   - Outputs (CSVs, optional .xlsx, two PNG charts) go to cfg[["out_dir"]].
 #
-# Caveats to carry into the note to CBO (all push the MF share UP):
+# Caveats to carry into the note to CBO:
+#   - Pushes the MF share DOWN: many residential/mixed-use towers are permitted
+#     as Commercial. The mf_share_incl_mixed column counts Commercial-class
+#     permits adding housing units as multifamily (an upper bound, since it
+#     includes their office/retail cost).
+# The rest push the MF share UP:
 #   - EstProjectCost is the applicant's estimated construction cost, not
 #     assessed value. It is used here for SHARES, not levels.
 #   - Mixed-use apartment buildings are classed Multifamily. MFTE exempts only
@@ -143,10 +148,14 @@ parse_dt <- function(x) {
   ))
 }
 
-grp_levels <- c("Multifamily", "Single family/duplex/townhouse",
-                "Commercial/industrial", "Other/unclassified",
-                "Institutional (mostly exempt)")
-inst_lab <- "Institutional (mostly exempt)"
+# Residential/mixed-use towers are often classed Commercial. Commercial or
+# Industrial permits adding mfte_min_units+ housing units get their own group so
+# they can be counted as multifamily in the upper-bound share.
+mixed_lab  <- paste0("Commercial class, ", cfg[["mfte_min_units"]], "+ units")
+inst_lab   <- "Institutional (mostly exempt)"
+mf_labs    <- c("Multifamily", mixed_lab)
+grp_levels <- c("Multifamily", mixed_lab, "Single family/duplex/townhouse",
+                "Commercial/industrial", "Other/unclassified", inst_lab)
 
 permits <- raw %>%
   distinct(permitnum, .keep_all = TRUE) %>%
@@ -163,6 +172,8 @@ permits <- raw %>%
     prop_grp   = case_when(
       permitclass == "Multifamily"                   ~ "Multifamily",
       permitclass == "Single Family/Duplex"          ~ "Single family/duplex/townhouse",
+      permitclass %in% c("Commercial", "Industrial") &
+        coalesce(units_add, 0) >= cfg[["mfte_min_units"]] ~ mixed_lab,
       permitclass %in% c("Commercial", "Industrial") ~ "Commercial/industrial",
       permitclass == "Institutional"                 ~ inst_lab,
       TRUE                                           ~ "Other/unclassified"
@@ -171,7 +182,9 @@ permits <- raw %>%
     taxable    = prop_grp != inst_lab,
     status_grp = case_when(
       str_detect(statuscurrent, regex("cancel|withdr", ignore_case = TRUE)) ~ "Canceled",
-      str_detect(statuscurrent, regex("^complete", ignore_case = TRUE))     ~ "Completed",
+      str_detect(statuscurrent,
+                 regex("^complete|inspections complete|approved to occupy",
+                       ignore_case = TRUE))                                 ~ "Completed",
       str_detect(statuscurrent, regex("^expired", ignore_case = TRUE))      ~ "Expired",
       str_detect(statuscurrent, regex("^closed", ignore_case = TRUE))       ~ "Closed",
       TRUE                                                                  ~ "Active"
@@ -245,10 +258,15 @@ mf_share_tbl <- function(df, by) {
       mf_ex_afford_m = sum(cost[prop_grp == "Multifamily" & !affordable_kw], na.rm = TRUE) / 1e6,
       mf_projects    = n_distinct(project_id[prop_grp == "Multifamily"]),
       mf_units       = sum(units_add[prop_grp == "Multifamily"], na.rm = TRUE),
+      mixed_cost_m   = sum(cost[prop_grp == mixed_lab], na.rm = TRUE) / 1e6,
+      mixed_units    = sum(units_add[prop_grp == mixed_lab], na.rm = TRUE),
       .groups = "drop"
     ) %>%
     mutate(
       mf_share           = mf_cost_m / taxable_cost_m,
+      # Upper bound: also counts Commercial-class permits adding housing units
+      # (whole permit cost, incl. any office/retail portion)
+      mf_share_incl_mixed = (mf_cost_m + mixed_cost_m) / taxable_cost_m,
       mf_share_mfte_size = mf_mfte_size_m / taxable_cost_m,
       # Sensitivity: drop keyword-flagged affordable MF from numerator and denominator
       mf_share_ex_afford = mf_ex_afford_m / (taxable_cost_m - (mf_cost_m - mf_ex_afford_m))
@@ -274,8 +292,9 @@ t3_mf_share_windows <- bind_rows(lapply(cfg[["share_windows"]], function(w) {
 }))
 
 # ---- 4. Q2: active multifamily pipeline --------------------------------------
+# Includes Commercial-class permits adding housing units (mixed-use towers)
 pipeline <- nc %>%
-  filter(prop_grp == "Multifamily", status_grp == "Active") %>%
+  filter(prop_grp %in% mf_labs, status_grp == "Active") %>%
   arrange(est_tax_yr, desc(cost))
 
 t4_mf_pipeline <- pipeline %>%
@@ -285,6 +304,9 @@ t4_mf_pipeline <- pipeline %>%
     permits               = n(),
     units_added           = sum(units_add, na.rm = TRUE),
     est_cost_m            = sum(cost, na.rm = TRUE) / 1e6,
+    projects_10plus_units = n_distinct(project_id[coalesce(units_add, 0) >= 10]),
+    projects_50plus_units = n_distinct(project_id[coalesce(units_add, 0) >= 50]),
+    commercial_class_permits = sum(prop_grp == mixed_lab),
     mfte_size_projects    = n_distinct(project_id[mfte_size]),
     mixed_use_permits     = sum(mixed_use),
     affordable_kw_permits = sum(affordable_kw),
@@ -293,13 +315,13 @@ t4_mf_pipeline <- pipeline %>%
   )
 
 t4b_mf_pipeline_list <- pipeline %>%
-  transmute(permitnum, project_id, address = originaladdress1, issued,
+  transmute(permitnum, project_id, address = originaladdress1, permitclass, issued,
             statuscurrent, est_tax_yr, units_added = units_add, est_cost = cost,
             mfte_size, mixed_use, affordable_kw, stale, description)
 
 # ---- 5. Q3: realization of issued MF permits ---------------------------------
 t5_mf_realization <- nc %>%
-  filter(prop_grp == "Multifamily",
+  filter(prop_grp %in% mf_labs,
          issue_yr <= year(cfg[["as_of"]]) - cfg[["realization_min_age_years"]]) %>%
   group_by(issue_yr) %>%
   summarise(
@@ -374,6 +396,7 @@ p1 <- ggplot(t1_by_year_type, aes(issue_yr, est_cost_m, fill = prop_grp)) +
 
 p2 <- t2_mf_share_issue_yr %>%
   select(issue_yr,
+         `MF incl. commercial-class w/ units` = mf_share_incl_mixed,
          `All multifamily`            = mf_share,
          `MF, MFTE-size buildings`    = mf_share_mfte_size,
          `MF ex. affordable keywords` = mf_share_ex_afford) %>%
@@ -395,16 +418,18 @@ ggsave(file.path(cfg[["out_dir"]], "p2_mf_share.png"),     p2, width = 9, height
 cat("\n================ SUMMARY FOR CBO ================\n")
 for (i in seq_len(nrow(t3_mf_share_windows))) {
   cat(sprintf(
-    "MF share of taxable NC permit value, %s: %.0f%%  (MFTE-size: %.0f%%, ex-affordable keywords: %.0f%%)\n",
+    "MF share of taxable NC permit value, %s: %.0f%%, or %.0f%% incl. commercial-class permits with units  (MFTE-size: %.0f%%, ex-affordable keywords: %.0f%%)\n",
     t3_mf_share_windows[["window"]][i],
     100 * t3_mf_share_windows[["mf_share"]][i],
+    100 * t3_mf_share_windows[["mf_share_incl_mixed"]][i],
     100 * t3_mf_share_windows[["mf_share_mfte_size"]][i],
     100 * t3_mf_share_windows[["mf_share_ex_afford"]][i]
   ))
 }
 cat(sprintf(
-  "Active MF pipeline: %d projects, %s units, $%.0fM est. cost (%d permits flagged stale)\n",
+  "Active MF pipeline (incl. commercial-class w/ units): %d projects (%d with 50+ units), %s units, $%.0fM est. cost (%d permits flagged stale)\n",
   n_distinct(pipeline[["project_id"]]),
+  n_distinct(pipeline[["project_id"]][coalesce(pipeline[["units_add"]], 0) >= 50]),
   format(sum(pipeline[["units_add"]], na.rm = TRUE), big.mark = ","),
   sum(pipeline[["cost"]], na.rm = TRUE) / 1e6,
   sum(pipeline[["stale"]])
