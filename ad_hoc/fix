@@ -1,23 +1,3 @@
-R version 4.6.1 (2026-06-24 ucrt) -- "Happy Hop"
-Copyright (C) 2026 The R Foundation for Statistical Computing
-Platform: x86_64-w64-mingw32/x64
-
-R is free software and comes with ABSOLUTELY NO WARRANTY.
-You are welcome to redistribute it under certain conditions.
-Type 'license()' or 'licence()' for distribution details.
-
-  Natural language support but running in an English locale
-
-R is a collaborative project with many contributors.
-Type 'contributors()' for more information and
-'citation()' on how to cite R or R packages in publications.
-
-Type 'demo()' for some demos, 'help()' for on-line help, or
-'help.start()' for an HTML browser interface to help.
-Type 'q()' to quit R.
-
-[Workspace loaded from //ad.seattle.gov/dept/ERF/DATA/OERF/Revenue/AV and New Construction/2026/AV ML Model Oct/.RData]
-
 > # =============================================================================
 > # sdci_permits_by_type.R
 > # -----------------------------------------------------------------------------
@@ -44,7 +24,12 @@ Type 'q()' to quit R.
 > #     data.seattle.gov in a browser and point local_csv at it.
 > #   - Outputs (CSVs, optional .xlsx, two PNG charts) go to cfg[["out_dir"]].
 > #
-> # Caveats to carry into the note to CBO (all push the MF share UP):
+> # Caveats to carry into the note to CBO:
+> #   - Pushes the MF share DOWN: many residential/mixed-use towers are permitted
+> #     as Commercial. The mf_share_incl_mixed column counts Commercial-class
+> #     permits adding housing units as multifamily (an upper bound, since it
+> #     includes their office/retail cost).
+> # The rest push the MF share UP:
 > #   - EstProjectCost is the applicant's estimated construction cost, not
 > #     assessed value. It is used here for SHARES, not levels.
 > #   - Mixed-use apartment buildings are classed Multifamily. MFTE exempts only
@@ -137,10 +122,7 @@ Type 'q()' to quit R.
 + }
 > 
 > raw <- load_permits(cfg)
-Downloading SDCI Building Permits from data.seattle.gov ...
-trying URL 'https://data.seattle.gov/api/views/76t5-zqzr/rows.csv?accessType=DOWNLOAD'
-downloaded 89.1 MB
-
+Using cached file: data/sdci/building_permits_raw.csv
 > 
 > required <- c("permitnum", "permitclass", "permittypedesc", "housingunitsadded",
 +               "estprojectcost", "issueddate", "statuscurrent")
@@ -167,10 +149,14 @@ downloaded 89.1 MB
 +   ))
 + }
 > 
-> grp_levels <- c("Multifamily", "Single family/duplex/townhouse",
-+                 "Commercial/industrial", "Other/unclassified",
-+                 "Institutional (mostly exempt)")
-> inst_lab <- "Institutional (mostly exempt)"
+> # Residential/mixed-use towers are often classed Commercial. Commercial or
+> # Industrial permits adding mfte_min_units+ housing units get their own group so
+> # they can be counted as multifamily in the upper-bound share.
+> mixed_lab  <- paste0("Commercial class, ", cfg[["mfte_min_units"]], "+ units")
+> inst_lab   <- "Institutional (mostly exempt)"
+> mf_labs    <- c("Multifamily", mixed_lab)
+> grp_levels <- c("Multifamily", mixed_lab, "Single family/duplex/townhouse",
++                 "Commercial/industrial", "Other/unclassified", inst_lab)
 > 
 > permits <- raw %>%
 +   distinct(permitnum, .keep_all = TRUE) %>%
@@ -187,6 +173,8 @@ downloaded 89.1 MB
 +     prop_grp   = case_when(
 +       permitclass == "Multifamily"                   ~ "Multifamily",
 +       permitclass == "Single Family/Duplex"          ~ "Single family/duplex/townhouse",
++       permitclass %in% c("Commercial", "Industrial") &
++         coalesce(units_add, 0) >= cfg[["mfte_min_units"]] ~ mixed_lab,
 +       permitclass %in% c("Commercial", "Industrial") ~ "Commercial/industrial",
 +       permitclass == "Institutional"                 ~ inst_lab,
 +       TRUE                                           ~ "Other/unclassified"
@@ -195,7 +183,9 @@ downloaded 89.1 MB
 +     taxable    = prop_grp != inst_lab,
 +     status_grp = case_when(
 +       str_detect(statuscurrent, regex("cancel|withdr", ignore_case = TRUE)) ~ "Canceled",
-+       str_detect(statuscurrent, regex("^complete", ignore_case = TRUE))     ~ "Completed",
++       str_detect(statuscurrent,
++                  regex("^complete|inspections complete|approved to occupy",
++                        ignore_case = TRUE))                                 ~ "Completed",
 +       str_detect(statuscurrent, regex("^expired", ignore_case = TRUE))      ~ "Expired",
 +       str_detect(statuscurrent, regex("^closed", ignore_case = TRUE))       ~ "Closed",
 +       TRUE                                                                  ~ "Active"
@@ -235,15 +225,16 @@ Raw rows: 194108 | New-construction permits in scope: 13804
 > message("Check the class mapping and status grouping below:")
 Check the class mapping and status grouping below:
 > print(count(nc, permitclass, prop_grp, sort = TRUE))
-# A tibble: 6 × 3
+# A tibble: 7 × 3
   permitclass          prop_grp                           n
   <chr>                <fct>                          <int>
 1 Single Family/Duplex Single family/duplex/townhouse  9534
 2 Multifamily          Multifamily                     3223
-3 Commercial           Commercial/industrial            734
-4 Institutional        Institutional (mostly exempt)    190
-5 Industrial           Commercial/industrial             69
-6 Vacant Land          Other/unclassified                54
+3 Commercial           Commercial/industrial            523
+4 Commercial           Commercial class, 4+ units       211
+5 Institutional        Institutional (mostly exempt)    190
+6 Industrial           Commercial/industrial             69
+7 Vacant Land          Other/unclassified                54
 > print(count(nc, statuscurrent, status_grp, sort = TRUE))
 # A tibble: 10 × 3
    statuscurrent             status_grp     n
@@ -251,10 +242,10 @@ Check the class mapping and status grouping below:
  1 Completed                 Completed  10143
  2 Issued                    Active      2115
  3 Expired                   Expired     1487
- 4 Inspections Completed     Active        26
+ 4 Inspections Completed     Completed     26
  5 Closed                    Closed        12
  6 Phase Issued              Active        11
- 7 Approved to Occupy        Active         4
+ 7 Approved to Occupy        Completed      4
  8 Ready for Issuance        Active         4
  9 Additional Info Requested Active         1
 10 Reviews In Process        Active         1
@@ -294,10 +285,15 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 +       mf_ex_afford_m = sum(cost[prop_grp == "Multifamily" & !affordable_kw], na.rm = TRUE) / 1e6,
 +       mf_projects    = n_distinct(project_id[prop_grp == "Multifamily"]),
 +       mf_units       = sum(units_add[prop_grp == "Multifamily"], na.rm = TRUE),
++       mixed_cost_m   = sum(cost[prop_grp == mixed_lab], na.rm = TRUE) / 1e6,
++       mixed_units    = sum(units_add[prop_grp == mixed_lab], na.rm = TRUE),
 +       .groups = "drop"
 +     ) %>%
 +     mutate(
 +       mf_share           = mf_cost_m / taxable_cost_m,
++       # Upper bound: also counts Commercial-class permits adding housing units
++       # (whole permit cost, incl. any office/retail portion)
++       mf_share_incl_mixed = (mf_cost_m + mixed_cost_m) / taxable_cost_m,
 +       mf_share_mfte_size = mf_mfte_size_m / taxable_cost_m,
 +       # Sensitivity: drop keyword-flagged affordable MF from numerator and denominator
 +       mf_share_ex_afford = mf_ex_afford_m / (taxable_cost_m - (mf_cost_m - mf_ex_afford_m))
@@ -323,8 +319,9 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 + }))
 > 
 > # ---- 4. Q2: active multifamily pipeline --------------------------------------
+> # Includes Commercial-class permits adding housing units (mixed-use towers)
 > pipeline <- nc %>%
-+   filter(prop_grp == "Multifamily", status_grp == "Active") %>%
++   filter(prop_grp %in% mf_labs, status_grp == "Active") %>%
 +   arrange(est_tax_yr, desc(cost))
 > 
 > t4_mf_pipeline <- pipeline %>%
@@ -334,6 +331,9 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 +     permits               = n(),
 +     units_added           = sum(units_add, na.rm = TRUE),
 +     est_cost_m            = sum(cost, na.rm = TRUE) / 1e6,
++     projects_10plus_units = n_distinct(project_id[coalesce(units_add, 0) >= 10]),
++     projects_50plus_units = n_distinct(project_id[coalesce(units_add, 0) >= 50]),
++     commercial_class_permits = sum(prop_grp == mixed_lab),
 +     mfte_size_projects    = n_distinct(project_id[mfte_size]),
 +     mixed_use_permits     = sum(mixed_use),
 +     affordable_kw_permits = sum(affordable_kw),
@@ -342,13 +342,13 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 +   )
 > 
 > t4b_mf_pipeline_list <- pipeline %>%
-+   transmute(permitnum, project_id, address = originaladdress1, issued,
++   transmute(permitnum, project_id, address = originaladdress1, permitclass, issued,
 +             statuscurrent, est_tax_yr, units_added = units_add, est_cost = cost,
 +             mfte_size, mixed_use, affordable_kw, stale, description)
 > 
 > # ---- 5. Q3: realization of issued MF permits ---------------------------------
 > t5_mf_realization <- nc %>%
-+   filter(prop_grp == "Multifamily",
++   filter(prop_grp %in% mf_labs,
 +          issue_yr <= year(cfg[["as_of"]]) - cfg[["realization_min_age_years"]]) %>%
 +   group_by(issue_yr) %>%
 +   summarise(
@@ -423,6 +423,7 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 > 
 > p2 <- t2_mf_share_issue_yr %>%
 +   select(issue_yr,
++          `MF incl. commercial-class w/ units` = mf_share_incl_mixed,
 +          `All multifamily`            = mf_share,
 +          `MF, MFTE-size buildings`    = mf_share_mfte_size,
 +          `MF ex. affordable keywords` = mf_share_ex_afford) %>%
@@ -446,36 +447,36 @@ Permits with missing/zero cost (counted, excluded from $ sums): 6
 ================ SUMMARY FOR CBO ================
 > for (i in seq_len(nrow(t3_mf_share_windows))) {
 +   cat(sprintf(
-+     "MF share of taxable NC permit value, %s: %.0f%%  (MFTE-size: %.0f%%, ex-affordable keywords: %.0f%%)\n",
++     "MF share of taxable NC permit value, %s: %.0f%%, or %.0f%% incl. commercial-class permits with units  (MFTE-size: %.0f%%, ex-affordable keywords: %.0f%%)\n",
 +     t3_mf_share_windows[["window"]][i],
 +     100 * t3_mf_share_windows[["mf_share"]][i],
++     100 * t3_mf_share_windows[["mf_share_incl_mixed"]][i],
 +     100 * t3_mf_share_windows[["mf_share_mfte_size"]][i],
 +     100 * t3_mf_share_windows[["mf_share_ex_afford"]][i]
 +   ))
 + }
-MF share of taxable NC permit value, 2023-2025 (3 yrs): 53%  (MFTE-size: 49%, ex-affordable keywords: 52%)
-MF share of taxable NC permit value, 2021-2025 (5 yrs): 48%  (MFTE-size: 44%, ex-affordable keywords: 47%)
+MF share of taxable NC permit value, 2023-2025 (3 yrs): 53%, or 62% incl. commercial-class permits with units  (MFTE-size: 49%, ex-affordable keywords: 52%)
+MF share of taxable NC permit value, 2021-2025 (5 yrs): 48%, or 65% incl. commercial-class permits with units  (MFTE-size: 44%, ex-affordable keywords: 47%)
 > cat(sprintf(
-+   "Active MF pipeline: %d projects, %s units, $%.0fM est. cost (%d permits flagged stale)\n",
++   "Active MF pipeline (incl. commercial-class w/ units): %d projects (%d with 50+ units), %s units, $%.0fM est. cost (%d permits flagged stale)\n",
 +   n_distinct(pipeline[["project_id"]]),
++   n_distinct(pipeline[["project_id"]][coalesce(pipeline[["units_add"]], 0) >= 50]),
 +   format(sum(pipeline[["units_add"]], na.rm = TRUE), big.mark = ","),
 +   sum(pipeline[["cost"]], na.rm = TRUE) / 1e6,
 +   sum(pipeline[["stale"]])
 + ))
-Active MF pipeline: 359 projects, 10,884 units, $1930M est. cost (78 permits flagged stale)
+Active MF pipeline (incl. commercial-class w/ units): 369 projects (76 with 50+ units), 14,878 units, $3021M est. cost (84 permits flagged stale)
 > cat("\nPipeline by estimated tax year:\n")
 
 Pipeline by estimated tax year:
 > print(t4_mf_pipeline)
-# A tibble: 6 × 9
-  est_tax_yr projects permits units_added est_cost_m mfte_size_projects mixed_use_permits affordable_kw_permits stale_permits
-       <int>    <int>   <int>       <dbl>      <dbl>              <int>             <int>                 <int>         <int>
-1       2022        2       2           8      1.85                   2                 0                     0             2
-2       2023        1       1           8      0.799                  1                 0                     0             1
-3       2026        1       1          86      8.12                   1                 0                     1             1
-4       2027        4       4         224     38.9                    3                 0                     0             0
-5       2028      263     269        9371   1675.                   174                43                     1            74
-6       2029       88      88        1187    206.                    43                 7                     1             0
+# A tibble: 4 × 12
+  est_tax_yr projects permits units_added est_cost_m projects_10plus_units projects_50plus_units commercial_class_permits mfte_size_projects mixed_use_permits affordable_kw_permits stale_permits
+       <int>    <int>   <int>       <dbl>      <dbl>                 <int>                 <int>                    <int>              <int>             <int>                 <int>         <int>
+1       2022        1       1           4      0.921                     0                     0                        0                  1                 0                     0             1
+2       2027        1       1           1      0.634                     0                     0                        0                  0                 0                     0             0
+3       2028      277     284       13261   2713.                      103                    65                       17                189                58                     2            83
+4       2029       90      90        1612    306.                       14                    11                        2                 45                 9                     1             0
 > cat("\nOutputs written to: ", normalizePath(cfg[["out_dir"]]), "\n", sep = "")
 
 Outputs written to: \\ad.seattle.gov\dept\ERF\DATA\OERF\Revenue\AV and New Construction\2026\AV ML Model Oct\output\mfte_permits
