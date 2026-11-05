@@ -1,0 +1,414 @@
+# =============================================================================
+# sdci_permits_by_type.R
+# -----------------------------------------------------------------------------
+# Purpose: Break SDCI new-construction permits down by property type to support
+#          CBO's MFTE fiscal-note request (Nov 2026).
+#
+# Answers:
+#   Q1. What share of new construction (by permit value) is multifamily?
+#       -> proxy for the multifamily share of the NC forecast
+#   Q2. How many multifamily projects/units are in the near-term pipeline, and
+#       roughly which tax year do they reach the roll?
+#   Q3. What share of issued new MF permits historically reach "Completed"?
+#       -> realization check on that pipeline
+#   (Optional) Q4. Apply the MF share to the NC forecast and turn it into
+#       exempt value by tax year under low/mid/high assumptions.
+#
+# Source:  SDCI Building Permits, data.seattle.gov dataset 76t5-zqzr, or any
+#          local extract with the same columns (e.g. from Scott).
+#
+# How to run:
+#   - If you already have the permit CSV, set cfg[["local_csv"]] to its path.
+#   - Otherwise leave it NULL and the script downloads and caches the file.
+#     If the work network blocks the download, export the CSV from
+#     data.seattle.gov in a browser and point local_csv at it.
+#   - Outputs (CSVs, optional .xlsx, two PNG charts) go to cfg[["out_dir"]].
+#
+# Caveats to carry into the note to CBO (all push the MF share UP):
+#   - EstProjectCost is the applicant's estimated construction cost, not
+#     assessed value. It is used here for SHARES, not levels.
+#   - Mixed-use apartment buildings are classed Multifamily. MFTE exempts only
+#     the residential portion.
+#   - Nonprofit / public affordable housing in the Multifamily class is largely
+#     property-tax exempt and never shows up in NC. A description keyword flag
+#     gives a rough sensitivity.
+#   - Permits include projects already using MFTE, whose value is not in NC
+#     until the exemption ends. Cross-reference the Office of Housing MFTE
+#     project list to refine.
+#   - Institutional permits are mostly exempt and are excluded from the
+#     taxable denominator (reported separately).
+#   - NC enters the roll at its July 31 value (RCW 36.21.080), so large
+#     projects land over 2-3 tax years. The tax-year mapping here is a simple
+#     single-year approximation.
+#
+# List elements are accessed with [[ ]] rather than $ on purpose, so the
+# script survives copy/paste through chat tools.
+# =============================================================================
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(readr)
+  library(stringr)
+  library(lubridate)
+  library(ggplot2)
+})
+
+# ---- 0. Configuration --------------------------------------------------------
+cfg <- list(
+  # Data
+  local_csv    = NULL,  # path to an existing extract; NULL = download/cache below
+  download_url = "https://data.seattle.gov/api/views/76t5-zqzr/rows.csv?accessType=DOWNLOAD",
+  cache_csv    = "data/sdci/building_permits_raw.csv",
+  out_dir      = "output/mfte_permits",
+  as_of        = Sys.Date(),
+
+  # Scope
+  first_issue_year  = 2015,
+  include_additions = FALSE,   # TRUE adds Addition/Alteration permits (incl. TIs)
+  share_windows     = c(3, 5), # trailing complete issue years for pooled shares
+
+  # Timing
+  lag_months  = 18,  # issuance -> completion when no CompletedDate (18 = six quarters);
+                     # align with the lag used in the NC model
+  stale_years = 4,   # active permits issued longer ago than this are flagged stale
+
+  # MFTE screens
+  mfte_min_units = 4,             # minimum units for MFTE; verify against SMC 5.73 / P7
+  realization_min_age_years = 4,  # judge completion only for cohorts at least this old
+
+  # Optional Q4: apply shares to the NC forecast
+  nc_forecast_csv       = NULL,  # CSV with columns tax_yr, nc (forecast NC in dollars)
+  mf_share_window       = 5,     # which trailing window's pooled share to apply
+  first_affected_tax_yr = 2029,  # earliest tax year a newly eligible project could be exempt
+  exemption_years       = 12,
+  scenarios = data.frame(
+    scenario       = c("Low", "Mid", "High"),
+    newly_eligible = c(0.10, 0.25, 0.50),  # PLACEHOLDERS - set once the proposal is known
+    take_up        = c(0.25, 0.50, 0.75)   # PLACEHOLDERS - set once the proposal is known
+  )
+)
+
+dir.create(cfg[["out_dir"]], recursive = TRUE, showWarnings = FALSE)
+
+# ---- 1. Load -----------------------------------------------------------------
+load_permits <- function(cfg) {
+  path <- cfg[["local_csv"]]
+  if (is.null(path)) {
+    path <- cfg[["cache_csv"]]
+    if (!file.exists(path)) {
+      dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+      message("Downloading SDCI Building Permits from data.seattle.gov ...")
+      old_to <- getOption("timeout")
+      options(timeout = max(900, old_to))
+      on.exit(options(timeout = old_to), add = TRUE)
+      utils::download.file(cfg[["download_url"]], path, mode = "wb")
+    } else {
+      message("Using cached file: ", path)
+    }
+  }
+  raw <- read_csv(path, col_types = cols(.default = col_character()), progress = FALSE)
+  # Portal export is CamelCase, API export is lowercase -> normalize both
+  names(raw) <- tolower(gsub("[^A-Za-z0-9]", "", names(raw)))
+  if (!"statuscurrent" %in% names(raw) && "status" %in% names(raw)) {
+    raw <- rename(raw, statuscurrent = status)
+  }
+  raw
+}
+
+raw <- load_permits(cfg)
+
+required <- c("permitnum", "permitclass", "permittypedesc", "housingunitsadded",
+              "estprojectcost", "issueddate", "statuscurrent")
+optional <- c("permittypemapped", "description", "housingunitsremoved",
+              "completeddate", "relatedmup", "originaladdress1")
+
+missing_req <- setdiff(required, names(raw))
+if (length(missing_req) > 0) {
+  stop("Missing required columns: ", paste(missing_req, collapse = ", "),
+       "\nColumns found: ", paste(names(raw), collapse = ", "),
+       "\nRename the matching columns in your extract and re-run.")
+}
+for (v in setdiff(optional, names(raw))) raw[[v]] <- NA_character_
+
+# ---- 2. Clean and classify ---------------------------------------------------
+parse_dt <- function(x) {
+  x <- str_trim(x)
+  x <- sub("T", " ", x, fixed = TRUE)
+  x <- sub("\\.[0-9]+$", "", x)
+  as.Date(parse_date_time(
+    x,
+    orders = c("Ymd HMS", "Ymd HM", "Ymd", "mdY IMS p", "mdY HMS", "mdY HM", "mdY", "mdy"),
+    quiet  = TRUE
+  ))
+}
+
+grp_levels <- c("Multifamily", "Single family/duplex/townhouse",
+                "Commercial/industrial", "Other/unclassified",
+                "Institutional (mostly exempt)")
+inst_lab <- "Institutional (mostly exempt)"
+
+permits <- raw %>%
+  distinct(permitnum, .keep_all = TRUE) %>%
+  mutate(
+    issued     = parse_dt(issueddate),
+    completed  = parse_dt(completeddate),
+    cost       = suppressWarnings(parse_number(estprojectcost)),
+    cost       = if_else(!is.na(cost) & cost > 0, cost, NA_real_),
+    units_add  = suppressWarnings(parse_number(housingunitsadded)),
+    units_rem  = suppressWarnings(parse_number(housingunitsremoved)),
+    issue_yr   = as.integer(year(issued)),
+    project_id = coalesce(na_if(str_trim(relatedmup), ""), permitnum),
+    desc_lc    = str_to_lower(coalesce(description, "")),
+    prop_grp   = case_when(
+      permitclass == "Multifamily"                   ~ "Multifamily",
+      permitclass == "Single Family/Duplex"          ~ "Single family/duplex/townhouse",
+      permitclass %in% c("Commercial", "Industrial") ~ "Commercial/industrial",
+      permitclass == "Institutional"                 ~ inst_lab,
+      TRUE                                           ~ "Other/unclassified"
+    ),
+    prop_grp   = factor(prop_grp, levels = grp_levels),
+    taxable    = prop_grp != inst_lab,
+    status_grp = case_when(
+      str_detect(statuscurrent, regex("cancel|withdr", ignore_case = TRUE)) ~ "Canceled",
+      str_detect(statuscurrent, regex("^complete", ignore_case = TRUE))     ~ "Completed",
+      str_detect(statuscurrent, regex("^expired", ignore_case = TRUE))      ~ "Expired",
+      str_detect(statuscurrent, regex("^closed", ignore_case = TRUE))       ~ "Closed",
+      TRUE                                                                  ~ "Active"
+    ),
+    mixed_use      = str_detect(desc_lc, "mixed[- ]?use|retail|commercial space|restaurant"),
+    affordable_kw  = str_detect(desc_lc, "affordable|low[- ]?income|supportive|housing authority"),
+    mfte_size      = coalesce(units_add, 0) >= cfg[["mfte_min_units"]],
+    townhouse_like = prop_grp == "Single family/duplex/townhouse" & coalesce(units_add, 0) >= 3
+  )
+
+keep_types <- if (isTRUE(cfg[["include_additions"]])) c("New", "Addition/Alteration") else "New"
+
+nc <- permits %>%
+  filter(
+    is.na(permittypemapped) | permittypemapped == "Building",
+    permittypedesc %in% keep_types,
+    !is.na(issued),
+    issue_yr >= cfg[["first_issue_year"]],
+    status_grp != "Canceled"
+  ) %>%
+  mutate(
+    est_complete = case_when(
+      !is.na(completed)      ~ completed,
+      status_grp == "Active" ~ pmax(issued %m+% months(cfg[["lag_months"]]), cfg[["as_of"]]),
+      TRUE                   ~ issued %m+% months(cfg[["lag_months"]])
+    ),
+    # Value as of July 31 of the assessment year; taxes payable the next year
+    assess_yr  = if_else(month(est_complete) <= 7, year(est_complete), year(est_complete) + 1),
+    est_tax_yr = as.integer(assess_yr + 1),
+    stale      = status_grp == "Active" &
+                 issued < (cfg[["as_of"]] %m-% years(cfg[["stale_years"]])),
+    ytd        = issue_yr == year(cfg[["as_of"]])
+  )
+
+message("Raw rows: ", nrow(raw), " | New-construction permits in scope: ", nrow(nc))
+message("Check the class mapping and status grouping below:")
+print(count(nc, permitclass, prop_grp, sort = TRUE))
+print(count(nc, statuscurrent, status_grp, sort = TRUE))
+message("Permits with missing/zero cost (counted, excluded from $ sums): ",
+        sum(is.na(nc[["cost"]])))
+
+latest_full_yr <- year(cfg[["as_of"]]) - 1
+
+# ---- 3. Q1: MF share of taxable new-construction value -----------------------
+t1_by_year_type <- nc %>%
+  group_by(issue_yr, ytd, prop_grp) %>%
+  summarise(
+    permits        = n(),
+    projects       = n_distinct(project_id),
+    units_added    = sum(units_add, na.rm = TRUE),
+    est_cost_m     = sum(cost, na.rm = TRUE) / 1e6,
+    n_missing_cost = sum(is.na(cost)),
+    .groups = "drop"
+  ) %>%
+  group_by(issue_yr) %>%
+  mutate(share_of_taxable_cost = if_else(
+    prop_grp == inst_lab, NA_real_,
+    est_cost_m / sum(est_cost_m[prop_grp != inst_lab])
+  )) %>%
+  ungroup() %>%
+  arrange(issue_yr, prop_grp)
+
+mf_share_tbl <- function(df, by) {
+  df %>%
+    filter(taxable) %>%
+    group_by({{ by }}) %>%
+    summarise(
+      taxable_cost_m = sum(cost, na.rm = TRUE) / 1e6,
+      mf_cost_m      = sum(cost[prop_grp == "Multifamily"], na.rm = TRUE) / 1e6,
+      mf_mfte_size_m = sum(cost[prop_grp == "Multifamily" & mfte_size], na.rm = TRUE) / 1e6,
+      mf_ex_afford_m = sum(cost[prop_grp == "Multifamily" & !affordable_kw], na.rm = TRUE) / 1e6,
+      mf_projects    = n_distinct(project_id[prop_grp == "Multifamily"]),
+      mf_units       = sum(units_add[prop_grp == "Multifamily"], na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      mf_share           = mf_cost_m / taxable_cost_m,
+      mf_share_mfte_size = mf_mfte_size_m / taxable_cost_m,
+      # Sensitivity: drop keyword-flagged affordable MF from numerator and denominator
+      mf_share_ex_afford = mf_ex_afford_m / (taxable_cost_m - (mf_cost_m - mf_ex_afford_m))
+    )
+}
+
+t2_mf_share_issue_yr <- mf_share_tbl(nc, issue_yr) %>%
+  mutate(ytd = issue_yr == year(cfg[["as_of"]]), .after = issue_yr)
+
+# Tax-year view: only permits that were or are being built. Stale active permits
+# are dropped; overdue active permits are assumed to finish no earlier than as_of,
+# so the first forecast tax year collects that backlog.
+t2b_mf_share_tax_yr <- nc %>%
+  filter(status_grp %in% c("Completed", "Active"), !stale) %>%
+  mf_share_tbl(est_tax_yr)
+
+t3_mf_share_windows <- bind_rows(lapply(cfg[["share_windows"]], function(w) {
+  yrs <- (latest_full_yr - w + 1):latest_full_yr
+  nc %>%
+    filter(issue_yr %in% yrs) %>%
+    mutate(window = paste0(min(yrs), "-", max(yrs), " (", w, " yrs)")) %>%
+    mf_share_tbl(window)
+}))
+
+# ---- 4. Q2: active multifamily pipeline --------------------------------------
+pipeline <- nc %>%
+  filter(prop_grp == "Multifamily", status_grp == "Active") %>%
+  arrange(est_tax_yr, desc(cost))
+
+t4_mf_pipeline <- pipeline %>%
+  group_by(est_tax_yr) %>%
+  summarise(
+    projects              = n_distinct(project_id),
+    permits               = n(),
+    units_added           = sum(units_add, na.rm = TRUE),
+    est_cost_m            = sum(cost, na.rm = TRUE) / 1e6,
+    mfte_size_projects    = n_distinct(project_id[mfte_size]),
+    mixed_use_permits     = sum(mixed_use),
+    affordable_kw_permits = sum(affordable_kw),
+    stale_permits         = sum(stale),
+    .groups = "drop"
+  )
+
+t4b_mf_pipeline_list <- pipeline %>%
+  transmute(permitnum, project_id, address = originaladdress1, issued,
+            statuscurrent, est_tax_yr, units_added = units_add, est_cost = cost,
+            mfte_size, mixed_use, affordable_kw, stale, description)
+
+# ---- 5. Q3: realization of issued MF permits ---------------------------------
+t5_mf_realization <- nc %>%
+  filter(prop_grp == "Multifamily",
+         issue_yr <= year(cfg[["as_of"]]) - cfg[["realization_min_age_years"]]) %>%
+  group_by(issue_yr) %>%
+  summarise(
+    permits              = n(),
+    completed_share      = mean(status_grp == "Completed"),
+    expired_share        = mean(status_grp == "Expired"),
+    closed_share         = mean(status_grp == "Closed"),
+    still_active_share   = mean(status_grp == "Active"),
+    completed_cost_share = sum(cost[status_grp == "Completed"], na.rm = TRUE) /
+                           sum(cost, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+outs <- list(
+  t1_by_year_type      = t1_by_year_type,
+  t2_mf_share_issue_yr = t2_mf_share_issue_yr,
+  t2b_mf_share_tax_yr  = t2b_mf_share_tax_yr,
+  t3_mf_share_windows  = t3_mf_share_windows,
+  t4_mf_pipeline       = t4_mf_pipeline,
+  t4b_mf_pipeline_list = t4b_mf_pipeline_list,
+  t5_mf_realization    = t5_mf_realization
+)
+
+# ---- 6. Optional Q4: apply to the NC forecast ---------------------------------
+# exempt value entering in tax year t =
+#   NC_t x MF share x newly eligible share x take-up   (zero before first_affected_tax_yr)
+# exempt stock = rolling sum of the last `exemption_years` cohorts.
+# Held at entry value (no appreciation); CBO applies levy rates to these values.
+if (!is.null(cfg[["nc_forecast_csv"]])) {
+  ncf <- read_csv(cfg[["nc_forecast_csv"]], show_col_types = FALSE) %>%
+    rename_with(tolower) %>%
+    select(tax_yr, nc)
+  win_pat   <- paste0("(", cfg[["mf_share_window"]], " yrs)")
+  share_row <- filter(t3_mf_share_windows, str_detect(window, fixed(win_pat)))
+  if (nrow(share_row) == 0) stop("mf_share_window must be one of share_windows")
+  mf_share_used <- share_row[["mf_share"]][1]
+  n_ex <- cfg[["exemption_years"]]
+
+  outs[["t6_exempt_value_scenarios"]] <- crossing(ncf, cfg[["scenarios"]]) %>%
+    mutate(
+      mf_share_used = mf_share_used,
+      mf_nc         = nc * mf_share_used,
+      exempt_new    = if_else(tax_yr >= cfg[["first_affected_tax_yr"]],
+                              mf_nc * newly_eligible * take_up, 0)
+    ) %>%
+    arrange(scenario, tax_yr) %>%
+    group_by(scenario) %>%
+    mutate(exempt_stock = cumsum(exempt_new) -
+                          lag(cumsum(exempt_new), n_ex, default = 0)) %>%
+    ungroup()
+}
+
+# ---- 7. Write outputs -----------------------------------------------------------
+for (nm in names(outs)) {
+  write_csv(outs[[nm]], file.path(cfg[["out_dir"]], paste0(nm, ".csv")))
+}
+if (requireNamespace("openxlsx", quietly = TRUE)) {
+  openxlsx::write.xlsx(outs, file.path(cfg[["out_dir"]], "sdci_permits_by_type.xlsx"))
+}
+
+yr_breaks <- function(lims) seq(ceiling(lims[1]), floor(lims[2]), by = 1)
+
+p1 <- ggplot(t1_by_year_type, aes(issue_yr, est_cost_m, fill = prop_grp)) +
+  geom_col() +
+  scale_x_continuous(breaks = yr_breaks) +
+  labs(title = "SDCI new-construction permits by property type",
+       subtitle = paste0("Estimated project cost by issue year (",
+                         year(cfg[["as_of"]]), " is year-to-date)"),
+       x = "Issue year", y = "Estimated cost ($M)", fill = NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+p2 <- t2_mf_share_issue_yr %>%
+  select(issue_yr,
+         `All multifamily`            = mf_share,
+         `MF, MFTE-size buildings`    = mf_share_mfte_size,
+         `MF ex. affordable keywords` = mf_share_ex_afford) %>%
+  pivot_longer(-issue_yr, names_to = "series", values_to = "share") %>%
+  ggplot(aes(issue_yr, share, colour = series)) +
+  geom_line(linewidth = 1) +
+  geom_point() +
+  scale_x_continuous(breaks = yr_breaks) +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(title = "Multifamily share of taxable new-construction permit value",
+       x = "Issue year", y = NULL, colour = NULL) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+ggsave(file.path(cfg[["out_dir"]], "p1_cost_by_type.png"), p1, width = 9, height = 5, dpi = 150)
+ggsave(file.path(cfg[["out_dir"]], "p2_mf_share.png"),     p2, width = 9, height = 5, dpi = 150)
+
+# ---- 8. Console summary for the reply to CBO -----------------------------------
+cat("\n================ SUMMARY FOR CBO ================\n")
+for (i in seq_len(nrow(t3_mf_share_windows))) {
+  cat(sprintf(
+    "MF share of taxable NC permit value, %s: %.0f%%  (MFTE-size: %.0f%%, ex-affordable keywords: %.0f%%)\n",
+    t3_mf_share_windows[["window"]][i],
+    100 * t3_mf_share_windows[["mf_share"]][i],
+    100 * t3_mf_share_windows[["mf_share_mfte_size"]][i],
+    100 * t3_mf_share_windows[["mf_share_ex_afford"]][i]
+  ))
+}
+cat(sprintf(
+  "Active MF pipeline: %d projects, %s units, $%.0fM est. cost (%d permits flagged stale)\n",
+  n_distinct(pipeline[["project_id"]]),
+  format(sum(pipeline[["units_add"]], na.rm = TRUE), big.mark = ","),
+  sum(pipeline[["cost"]], na.rm = TRUE) / 1e6,
+  sum(pipeline[["stale"]])
+))
+cat("\nPipeline by estimated tax year:\n")
+print(t4_mf_pipeline)
+cat("\nOutputs written to: ", normalizePath(cfg[["out_dir"]]), "\n", sep = "")
